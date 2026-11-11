@@ -1,11 +1,12 @@
 'use client';
 
 import React from 'react';
-import { Plus, Database, Sparkles, Search, Layers } from 'lucide-react';
+import { Plus, Database, Sparkles, Search, Layers, Command } from 'lucide-react';
 
 interface NavbarProps {
   onOpenAddModal: () => void;
   onOpenPacksDrawer: () => void;
+  onOpenCommandPalette: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   isCloud: boolean;
@@ -15,6 +16,7 @@ interface NavbarProps {
 export function Navbar({
   onOpenAddModal,
   onOpenPacksDrawer,
+  onOpenCommandPalette,
   searchQuery,
   onSearchChange,
   isCloud,
@@ -41,7 +43,7 @@ export function Navbar({
           </div>
         </div>
 
-        {/* Search Bar */}
+        {/* Search Bar with Ctrl+K trigger */}
         <div className="relative flex-1 max-w-md mx-2">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
           <input
@@ -49,15 +51,23 @@ export function Navbar({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Buscar por nombre, autor o palabra clave..."
-            className="w-full rounded-lg border border-zinc-800 bg-zinc-900/60 py-1.5 pl-9 pr-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-emerald-500/60 focus:bg-zinc-900 focus:outline-none focus:ring-1 focus:ring-emerald-500/40 transition-colors"
+            className="w-full rounded-lg border border-zinc-800 bg-zinc-900/60 py-1.5 pl-9 pr-14 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-emerald-500/60 focus:bg-zinc-900 focus:outline-none focus:ring-1 focus:ring-emerald-500/40 transition-colors"
           />
+          <button
+            type="button"
+            onClick={onOpenCommandPalette}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded border border-zinc-700 bg-zinc-800 px-1.5 py-0.5 text-[10px] font-mono text-zinc-400 hover:text-white transition-colors"
+            title="Abrir Command Palette (Ctrl + K)"
+          >
+            Ctrl K
+          </button>
         </div>
 
         {/* Actions */}
         <div className="flex items-center gap-2">
           {/* Cloud Indicator Badge */}
           <div 
-            title={isCloud ? "Conectado a Supabase (Sincronizado)" : "Modo Local / Standalone (Configura Supabase en .env para Multi-usuario)"}
+            title={isCloud ? "Conectado a Supabase (Sincronizado)" : "Modo Local (Configura Supabase en .env para Multi-usuario)"}
             className={`hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs border ${
               isCloud 
                 ? 'border-emerald-500/20 bg-emerald-950/20 text-emerald-400' 

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Skill } from '@/types/skills';
-import { Copy, Check, Terminal, X, Sparkles, Code2, Download } from 'lucide-react';
+import { Copy, Check, Terminal, X, Sparkles, Code2, Download, FileCode } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface MultiSelectBarProps {
@@ -11,7 +11,7 @@ interface MultiSelectBarProps {
   onSaveAsPack: (skillIds: string[]) => void;
 }
 
-type CommandFormat = 'skills-cli' | 'claude' | 'cursor' | 'json';
+type CommandFormat = 'skills-cli' | 'claude' | 'cursor' | 'powershell' | 'json';
 
 export function MultiSelectBar({
   selectedSkills,
@@ -25,7 +25,6 @@ export function MultiSelectBar({
 
   // Generate batch command grouped by repository
   const generateCommand = (fmt: CommandFormat): string => {
-    // Group skills by repo
     const repoMap = new Map<string, string[]>();
     selectedSkills.forEach((s) => {
       const existing = repoMap.get(s.repo) || [];
@@ -57,6 +56,23 @@ export function MultiSelectBar({
       return commands.join(' && ');
     }
 
+    if (fmt === 'powershell') {
+      const lines: string[] = [
+        '# SkillsHub Installer Script for Windows (PowerShell)',
+        'Write-Host "=====================================" -ForegroundColor Cyan',
+        'Write-Host "  Instalando Skills en este proyecto  " -ForegroundColor Cyan',
+        'Write-Host "=====================================" -ForegroundColor Cyan',
+        '',
+      ];
+      repoMap.forEach((skills, repo) => {
+        lines.push(`Write-Host "-> Instalando de ${repo}..." -ForegroundColor Yellow`);
+        lines.push(`npx skills add ${repo} --skill ${skills.join(' ')} -y`);
+      });
+      lines.push('');
+      lines.push('Write-Host "¡Todas las skills fueron instaladas exitosamente!" -ForegroundColor Green');
+      return lines.join('\r\n');
+    }
+
     if (fmt === 'json') {
       const lockObj: Record<string, { source: string; sourceType: string; skillPath: string }> = {};
       selectedSkills.forEach((s) => {
@@ -82,14 +98,18 @@ export function MultiSelectBar({
   };
 
   const handleDownloadScript = () => {
+    let filename = 'install-skills.sh';
+    if (format === 'powershell') filename = 'install-skills.ps1';
+    else if (format === 'json') filename = 'skills-lock.json';
+
     const blob = new Blob([currentCommand], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = format === 'json' ? 'skills-lock.json' : 'install-skills.sh';
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('Archivo descargado');
+    toast.success(`Archivo descargado: ${filename}`);
   };
 
   return (
@@ -119,18 +139,26 @@ export function MultiSelectBar({
         </div>
 
         {/* Center: Format Selector */}
-        <div className="flex items-center gap-1 bg-zinc-950/80 p-1 rounded-lg border border-zinc-800 text-[11px] self-start sm:self-auto">
+        <div className="flex items-center gap-1 bg-zinc-950/80 p-1 rounded-lg border border-zinc-800 text-[11px] self-start sm:self-auto overflow-x-auto max-w-full">
           <button
             onClick={() => setFormat('skills-cli')}
-            className={`px-2 py-1 rounded transition-colors ${
+            className={`px-2 py-1 rounded transition-colors whitespace-nowrap ${
               format === 'skills-cli' ? 'bg-zinc-800 text-white font-medium' : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
             npx skills
           </button>
           <button
+            onClick={() => setFormat('powershell')}
+            className={`px-2 py-1 rounded transition-colors whitespace-nowrap ${
+              format === 'powershell' ? 'bg-zinc-800 text-white font-medium' : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            PowerShell (.ps1)
+          </button>
+          <button
             onClick={() => setFormat('claude')}
-            className={`px-2 py-1 rounded transition-colors ${
+            className={`px-2 py-1 rounded transition-colors whitespace-nowrap ${
               format === 'claude' ? 'bg-zinc-800 text-white font-medium' : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
@@ -138,7 +166,7 @@ export function MultiSelectBar({
           </button>
           <button
             onClick={() => setFormat('cursor')}
-            className={`px-2 py-1 rounded transition-colors ${
+            className={`px-2 py-1 rounded transition-colors whitespace-nowrap ${
               format === 'cursor' ? 'bg-zinc-800 text-white font-medium' : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
@@ -146,11 +174,11 @@ export function MultiSelectBar({
           </button>
           <button
             onClick={() => setFormat('json')}
-            className={`px-2 py-1 rounded transition-colors ${
+            className={`px-2 py-1 rounded transition-colors whitespace-nowrap ${
               format === 'json' ? 'bg-zinc-800 text-white font-medium' : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            JSON
+            lockfile
           </button>
         </div>
 
@@ -169,10 +197,13 @@ export function MultiSelectBar({
           {/* Download script */}
           <button
             onClick={handleDownloadScript}
-            className="tap-active flex items-center gap-1 rounded-lg border border-zinc-700 bg-zinc-800/80 p-2 text-xs font-medium text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
-            title="Descargar script"
+            className="tap-active flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/80 px-2.5 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
+            title={`Descargar ${format === 'powershell' ? 'script de PowerShell (.ps1)' : format === 'json' ? 'skills-lock.json' : 'script'}`}
           >
-            <Download className="h-3.5 w-3.5" />
+            <Download className="h-3.5 w-3.5 text-emerald-400" />
+            <span className="text-[11px] font-mono hidden sm:inline">
+              {format === 'powershell' ? '.ps1' : format === 'json' ? '.json' : '.sh'}
+            </span>
           </button>
 
           {/* Copy Command Main CTA */}

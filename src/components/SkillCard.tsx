@@ -89,19 +89,27 @@ export function SkillCard({
           {skill.description}
         </p>
 
-        {/* Tags */}
-        {skill.tags && skill.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {skill.tags.slice(0, 3).map((tag, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center text-[10px] text-zinc-400 bg-zinc-800/40 px-1.5 py-0.5 rounded border border-zinc-800"
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
+        {/* Badges: Allowed tools, Tech, Tags */}
+        <div className="flex flex-wrap items-center gap-1.5 mb-3">
+          {skill.allowed_tools && skill.allowed_tools.length > 0 && (
+            <span className="inline-flex items-center text-[10px] text-emerald-400 bg-emerald-950/30 px-1.5 py-0.5 rounded border border-emerald-800/40 font-mono">
+              ⚡ {skill.allowed_tools.slice(0, 3).join(', ')}{skill.allowed_tools.length > 3 ? '...' : ''}
+            </span>
+          )}
+          {skill.technologies && skill.technologies.length > 0 && (
+            <span className="inline-flex items-center text-[10px] text-cyan-400 bg-cyan-950/30 px-1.5 py-0.5 rounded border border-cyan-800/40 font-mono">
+              {skill.technologies.join(', ')}
+            </span>
+          )}
+          {skill.tags && skill.tags.slice(0, 2).map((tag, i) => (
+            <span
+              key={i}
+              className="inline-flex items-center text-[10px] text-zinc-400 bg-zinc-800/40 px-1.5 py-0.5 rounded border border-zinc-800"
+            >
+              #{tag}
+            </span>
+          ))}
+        </div>
       </div>
 
       {/* Footer / Actions */}

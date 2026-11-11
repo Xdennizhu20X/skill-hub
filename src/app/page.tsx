@@ -1,17 +1,19 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { CategoryType, Skill, SkillPack } from '@/types/skills';
+import { CategoryType, TechnologyType, Skill, SkillPack } from '@/types/skills';
 import { fetchSkills, fetchPacks, saveSkill, deleteSkill, savePack } from '@/lib/supabase';
 import { INITIAL_SKILLS, INITIAL_PACKS } from '@/lib/seed-data';
 import { Navbar } from '@/components/Navbar';
 import { CategoryFilter } from '@/components/CategoryFilter';
+import { TechFilter } from '@/components/TechFilter';
 import { SkillCard } from '@/components/SkillCard';
 import { MultiSelectBar } from '@/components/MultiSelectBar';
 import { AddSkillModal } from '@/components/AddSkillModal';
-import { SkillDetailModal } from '@/components/SkillDetailModal';
+import { SkillSlideOver } from '@/components/SkillSlideOver';
 import { PacksDrawer } from '@/components/PacksDrawer';
-import { Sparkles, Terminal, Info, CheckSquare, Square, Layers } from 'lucide-react';
+import { CommandPalette } from '@/components/CommandPalette';
+import { Sparkles, Terminal, CheckSquare, Square, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function HomePage() {
@@ -22,13 +24,27 @@ export default function HomePage() {
 
   // Filters & Search
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>('all');
+  const [selectedTech, setSelectedTech] = useState<TechnologyType>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
 
-  // Modals
+  // Modals & Panels
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [isPacksDrawerOpen, setIsPacksDrawerOpen] = useState<boolean>(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
   const [detailSkill, setDetailSkill] = useState<Skill | null>(null);
+
+  // Global Ctrl+K / Cmd+K listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Initial load
   useEffect(() => {
@@ -84,6 +100,16 @@ export default function HomePage() {
         return false;
       }
 
+      // Technology filter
+      if (selectedTech !== 'all') {
+        const matchTech = skill.technologies?.includes(selectedTech);
+        const matchTag = skill.tags?.some((t) => t.toLowerCase().includes(selectedTech));
+        const matchDesc = skill.description.toLowerCase().includes(selectedTech);
+        if (!matchTech && !matchTag && !matchDesc) {
+          return false;
+        }
+      }
+
       // Search query filter
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -99,7 +125,7 @@ export default function HomePage() {
 
       return true;
     });
-  }, [skills, selectedCategory, searchQuery]);
+  }, [skills, selectedCategory, selectedTech, searchQuery]);
 
   // Selected Skills Objects
   const selectedSkillsObjects = useMemo(() => {
@@ -119,17 +145,15 @@ export default function HomePage() {
     const allSelected = visibleIds.every((id) => selectedSkillIds.includes(id));
 
     if (allSelected) {
-      // Unselect visible
       setSelectedSkillIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
     } else {
-      // Select all visible
       const newSelected = Array.from(new Set([...selectedSkillIds, ...visibleIds]));
       setSelectedSkillIds(newSelected);
       toast.success(`${visibleIds.length} skills seleccionadas`);
     }
   };
 
-  // Add new skills from GitHub Scraper
+  // Add new skills from GitHub Scraper or Lockfile
   const handleAddSkills = async (newSkills: Omit<Skill, 'id' | 'created_at'>[]) => {
     const addedList: Skill[] = [];
     for (const item of newSkills) {
@@ -167,11 +191,12 @@ export default function HomePage() {
     filteredSkills.every((s) => selectedSkillIds.includes(s.id));
 
   return (
-    <main className="min-h-screen pb-28">
-      {/* Navbar */}
+    <main className="min-h-screen pb-32">
+      {/* Navbar with Command Palette trigger */}
       <Navbar
         onOpenAddModal={() => setIsAddModalOpen(true)}
         onOpenPacksDrawer={() => setIsPacksDrawerOpen(true)}
+        onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         isCloud={isCloud}
@@ -181,11 +206,19 @@ export default function HomePage() {
       {/* Main Content Area */}
       <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
         {/* Categories Bar */}
-        <div className="mb-4">
+        <div className="mb-2">
           <CategoryFilter
             selectedCategory={selectedCategory}
             onSelectCategory={setSelectedCategory}
             categoryCounts={categoryCounts}
+          />
+        </div>
+
+        {/* Tech Environment Filter Bar */}
+        <div className="mb-4 pt-1">
+          <TechFilter
+            selectedTech={selectedTech}
+            onSelectTech={setSelectedTech}
           />
         </div>
 
@@ -194,6 +227,7 @@ export default function HomePage() {
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-semibold text-zinc-200">
               {selectedCategory === 'all' ? 'Todas las Skills' : `Skills de ${selectedCategory}`}
+              {selectedTech !== 'all' && ` • ${selectedTech}`}
             </h2>
             <span className="text-xs text-zinc-400">
               ({filteredSkills.length} encontradas)
@@ -209,7 +243,7 @@ export default function HomePage() {
               {areAllVisibleSelected ? (
                 <>
                   <CheckSquare className="h-3.5 w-3.5 text-emerald-400" />
-                  <span>Deseleccionar esta categoría</span>
+                  <span>Deseleccionar esta vista</span>
                 </>
               ) : (
                 <>
@@ -222,18 +256,13 @@ export default function HomePage() {
         </div>
 
         {/* Skills Grid */}
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-zinc-500">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent mb-3" />
-            <p className="text-sm">Cargando catálogo de skills...</p>
-          </div>
-        ) : filteredSkills.length === 0 ? (
+        {filteredSkills.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-800 py-16 text-center">
             <Layers className="h-10 w-10 text-zinc-600 mb-3" />
             <h3 className="text-sm font-medium text-zinc-300">No se encontraron skills</h3>
             <p className="text-xs text-zinc-500 mt-1 max-w-sm">
-              {searchQuery
-                ? `No hay resultados para "${searchQuery}". Intenta con otra palabra clave.`
+              {searchQuery || selectedTech !== 'all'
+                ? `No hay resultados para los filtros seleccionados.`
                 : 'No hay skills registradas en esta categoría aún.'}
             </p>
             <button
@@ -258,22 +287,22 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* Sticky Multi-Select Command Generator Bar */}
+      {/* Sticky Multi-Select Command Generator Bar (with Windows PowerShell & lockfile support) */}
       <MultiSelectBar
         selectedSkills={selectedSkillsObjects}
         onClearSelection={() => setSelectedSkillIds([])}
         onSaveAsPack={() => setIsPacksDrawerOpen(true)}
       />
 
-      {/* Add Skill Modal (GitHub Scraping & Parsing) */}
+      {/* Add Skill Modal (GitHub Scraping, WhatsApp text paste & Lockfile import) */}
       <AddSkillModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onAddSkills={handleAddSkills}
       />
 
-      {/* Skill Details Modal */}
-      <SkillDetailModal
+      {/* Slide-over Sheet for Skill Details */}
+      <SkillSlideOver
         skill={detailSkill}
         onClose={() => setDetailSkill(null)}
         onDeleteSkill={handleDeleteSkill}
@@ -289,6 +318,18 @@ export default function HomePage() {
         onSelectSkills={(ids) => setSelectedSkillIds(ids)}
         onCreatePack={handleCreatePack}
         initialSelectedSkillIds={selectedSkillIds}
+      />
+
+      {/* Raycast-style Command Palette (Ctrl + K) */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        skills={skills}
+        selectedSkillIds={selectedSkillIds}
+        onToggleSelect={handleToggleSelect}
+        onSelectCategory={(cat) => setSelectedCategory(cat)}
+        onOpenAddModal={() => setIsAddModalOpen(true)}
+        onViewSkill={(skill) => setDetailSkill(skill)}
       />
     </main>
   );

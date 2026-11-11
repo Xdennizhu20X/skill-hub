@@ -12,6 +12,18 @@ export type CategoryType =
   | 'prompting'
   | 'other';
 
+export type TechnologyType =
+  | 'all'
+  | 'react'
+  | 'nextjs'
+  | 'typescript'
+  | 'swift'
+  | 'expo'
+  | 'tailwind'
+  | 'cloudflare'
+  | 'python'
+  | 'node';
+
 export interface CategoryDef {
   id: CategoryType;
   label: string;
@@ -29,6 +41,9 @@ export interface Skill {
   description: string;
   category: CategoryType;
   tags: string[];
+  technologies?: string[];
+  allowed_tools?: string[];
+  compatible_agents?: string[];
   author: string;
   install_command: string;
   raw_content?: string;
@@ -48,12 +63,22 @@ export interface SkillPack {
   user_id?: string;
 }
 
+export interface ProjectStack {
+  id: string;
+  name: string;
+  description?: string;
+  skill_ids: string[];
+  created_at: string;
+}
+
 export interface ScrapedSkillItem {
   name: string;
   title: string;
   description: string;
   category: CategoryType;
   tags: string[];
+  technologies?: string[];
+  allowed_tools?: string[];
   skill_path?: string;
   install_command: string;
 }

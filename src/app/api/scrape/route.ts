@@ -1,17 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CategoryType, ScrapedRepoResult, ScrapedSkillItem } from '@/types/skills';
 
-function parseGitHubUrl(input: string): { owner: string; repo: string; branch?: string; path?: string } | null {
-  const trimmed = input.trim();
-  
-  // Format: owner/repo
+function extractGitHubUrlFromText(text: string): string | null {
+  const trimmed = text.trim();
+
+  // 1. Direct owner/repo
   if (/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(trimmed)) {
-    const [owner, repo] = trimmed.split('/');
+    return trimmed;
+  }
+
+  // 2. Extract github.com URL from WhatsApp or mixed text
+  const urlMatch = trimmed.match(/https?:\/\/github\.com\/[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+(?:[^\s)]*)?/i);
+  if (urlMatch) {
+    return urlMatch[0];
+  }
+
+  return null;
+}
+
+function parseGitHubUrl(input: string): { owner: string; repo: string; branch?: string; path?: string } | null {
+  const extracted = extractGitHubUrlFromText(input);
+  if (!extracted) return null;
+
+  if (!extracted.startsWith('http')) {
+    const [owner, repo] = extracted.split('/');
     return { owner, repo };
   }
 
   try {
-    const url = new URL(trimmed);
+    const url = new URL(extracted);
     if (!url.hostname.includes('github.com')) return null;
     
     const parts = url.pathname.split('/').filter(Boolean);
@@ -34,10 +51,36 @@ function parseGitHubUrl(input: string): { owner: string; repo: string; branch?: 
   }
 }
 
+function detectTechnologies(text: string, topics: string[] = []): string[] {
+  const combined = (text + ' ' + topics.join(' ')).toLowerCase();
+  const techs: string[] = [];
+
+  if (/\b(nextjs|next\.js)\b/i.test(combined)) techs.push('nextjs');
+  if (/\b(react|reactjs)\b/i.test(combined)) techs.push('react');
+  if (/\b(typescript|ts)\b/i.test(combined)) techs.push('typescript');
+  if (/\b(swift|swiftui|ios)\b/i.test(combined)) techs.push('swift');
+  if (/\b(expo|react-native)\b/i.test(combined)) techs.push('expo');
+  if (/\b(tailwind|tailwindcss)\b/i.test(combined)) techs.push('tailwind');
+  if (/\b(cloudflare|workers|d1|kv)\b/i.test(combined)) techs.push('cloudflare');
+  if (/\b(python|py|fastapi|django)\b/i.test(combined)) techs.push('python');
+  if (/\b(node|nodejs|express)\b/i.test(combined)) techs.push('node');
+
+  return techs;
+}
+
+function parseAllowedTools(rawContent: string): string[] {
+  const match = rawContent.match(/allowed-tools:\s*([^\n\r]+)/i);
+  if (!match || !match[1]) return [];
+  return match[1]
+    .split(/[\s,]+/)
+    .map(t => t.trim())
+    .filter(Boolean);
+}
+
 function guessCategory(text: string, topics: string[] = []): CategoryType {
   const combined = (text + ' ' + topics.join(' ')).toLowerCase();
 
-  // 1. Security & Audits (High priority: pen-test, vulnerabilities, security reviews)
+  // 1. Security & Audits
   if (/\b(security|vulnerability|vulnerabilities|audit|pen-test|pentest|cve|exploit|hardening|auth|oauth|secret|encryption|firewall)\b/i.test(combined)) {
     return 'security';
   }
@@ -52,12 +95,12 @@ function guessCategory(text: string, topics: string[] = []): CategoryType {
     return 'animation';
   }
 
-  // 4. Mobile & Native (React Native, Expo, iOS, Android, Touch)
+  // 4. Mobile & Native
   if (/\b(mobile|expo|react-native|ios|android|swift|kotlin|touch-action|gestures|haptics|viewport)\b/i.test(combined)) {
     return 'mobile';
   }
 
-  // 5. Design & UI (Notice word boundaries: \bui\b and \bux\b so words like "guidance" or "suite" don't match!)
+  // 5. Design & UI
   if (/\b(design|ui|ux|css|tailwind|palette|colors|typography|theme|styling|interface|component|components|glassmorphism|layout)\b/i.test(combined)) {
     return 'design';
   }
@@ -92,10 +135,10 @@ function guessCategory(text: string, topics: string[] = []): CategoryType {
 
 function cleanMarkdownText(md: string): string {
   return md
-    .replace(/^#+\s+/gm, '') // Remove heading markers
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove links
-    .replace(/[*_`]/g, '') // Remove bold/italic/code markers
-    .replace(/<!--[\s\S]*?-->/g, '') // Remove HTML comments
+    .replace(/^#+\s+/gm, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/[*_`]/g, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
     .trim();
 }
 
@@ -104,13 +147,13 @@ export async function POST(req: NextRequest) {
     const { url } = await req.json();
 
     if (!url || typeof url !== 'string') {
-      return NextResponse.json({ error: 'URL de GitHub requerida' }, { status: 400 });
+      return NextResponse.json({ error: 'Texto o enlace de GitHub requerido' }, { status: 400 });
     }
 
     const parsed = parseGitHubUrl(url);
     if (!parsed) {
       return NextResponse.json(
-        { error: 'URL no válida. Ingresa un enlace de GitHub (ej. https://github.com/emilkowalski/skills o owner/repo)' },
+        { error: 'No se encontró un enlace de GitHub válido en el texto. Puedes pegar un enlace directo o un mensaje de WhatsApp que contenga el enlace.' },
         { status: 400 }
       );
     }
@@ -148,7 +191,7 @@ export async function POST(req: NextRequest) {
         readmeText = await readmeRes.text();
       }
     } catch {
-      // README not found or network issue
+      // README not found
     }
 
     // 3. Search for SKILL.md files in repository tree
@@ -164,11 +207,9 @@ export async function POST(req: NextRequest) {
         const treeData = await treeRes.json();
         const tree: Array<{ path: string; type: string }> = treeData.tree || [];
 
-        // Find all files ending in SKILL.md
         const skillFiles = tree.filter(f => f.type === 'blob' && f.path.toLowerCase().endsWith('skill.md'));
 
         for (const file of skillFiles) {
-          // Path format example: skills/animate/SKILL.md or SKILL.md
           const parts = file.path.split('/');
           let skillName = '';
           if (parts.length >= 2 && parts[parts.length - 1].toLowerCase() === 'skill.md') {
@@ -177,19 +218,20 @@ export async function POST(req: NextRequest) {
             skillName = repo;
           }
 
-          // Fetch first 500 characters of the SKILL.md to extract description from frontmatter
           let skillDesc = repoDescription;
+          let allowedTools: string[] = [];
           try {
             const rawSkillRes = await fetch(
               `https://raw.githubusercontent.com/${owner}/${repo}/${defaultBranch}/${file.path}`
             );
             if (rawSkillRes.ok) {
               const rawText = await rawSkillRes.text();
+              allowedTools = parseAllowedTools(rawText);
+
               const descMatch = rawText.match(/description:\s*["']?([^"'\n\r]+)["']?/i);
               if (descMatch && descMatch[1]) {
                 skillDesc = descMatch[1].trim();
               } else {
-                // Find first non-empty paragraph
                 const lines = rawText.split('\n').filter(l => !l.startsWith('---') && !l.startsWith('#') && l.trim().length > 10);
                 if (lines[0]) {
                   skillDesc = cleanMarkdownText(lines[0].slice(0, 200));
@@ -201,6 +243,7 @@ export async function POST(req: NextRequest) {
           }
 
           const cat = guessCategory(skillName + ' ' + skillDesc, topics);
+          const techs = detectTechnologies(skillName + ' ' + skillDesc, topics);
           const formattedTitle = skillName
             .split(/[-_]/)
             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -212,6 +255,8 @@ export async function POST(req: NextRequest) {
             description: skillDesc,
             category: cat,
             tags: [skillName, cat, owner],
+            technologies: techs,
+            allowed_tools: allowedTools,
             skill_path: file.path,
             install_command: `npx skills add ${owner}/${repo} --skill ${skillName}`,
           });
@@ -224,6 +269,8 @@ export async function POST(req: NextRequest) {
     // 4. If no SKILL.md was found via tree, treat the repository itself as a skill
     if (detectedSkills.length === 0) {
       const cat = guessCategory(repo + ' ' + repoDescription, topics);
+      const techs = detectTechnologies(repo + ' ' + repoDescription, topics);
+      const allowedTools = parseAllowedTools(readmeText);
       const formattedTitle = repo
         .split(/[-_]/)
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -235,6 +282,8 @@ export async function POST(req: NextRequest) {
         description: repoDescription,
         category: cat,
         tags: [...topics.slice(0, 4), cat, owner].filter(Boolean),
+        technologies: techs,
+        allowed_tools: allowedTools,
         install_command: `npx skills add ${owner}/${repo}`,
       });
     }
@@ -247,7 +296,7 @@ export async function POST(req: NextRequest) {
       description: repoDescription,
       stars,
       detected_skills: detectedSkills,
-      raw_readme: readmeText.slice(0, 3000), // First 3000 chars of README
+      raw_readme: readmeText.slice(0, 4000),
     };
 
     return NextResponse.json(result);
