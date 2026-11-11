@@ -5,12 +5,14 @@ import { CATEGORIES } from '@/lib/seed-data';
 import { CategoryType } from '@/types/skills';
 import { 
   Layers, 
+  ShieldAlert,
   Palette, 
   Sparkles, 
   ShieldCheck, 
   Smartphone, 
   Globe, 
   Server, 
+  Cloud,
   CheckCircle2, 
   Bot 
 } from 'lucide-react';
@@ -29,21 +31,23 @@ export function CategoryFilter({
   const getIcon = (id: CategoryType) => {
     switch (id) {
       case 'all': return <Layers className="h-3.5 w-3.5" />;
-      case 'design': return <Palette className="h-3.5 w-3.5" />;
-      case 'animation': return <Sparkles className="h-3.5 w-3.5" />;
-      case 'clean-code': return <ShieldCheck className="h-3.5 w-3.5" />;
-      case 'mobile': return <Smartphone className="h-3.5 w-3.5" />;
-      case 'frontend': return <Globe className="h-3.5 w-3.5" />;
-      case 'backend': return <Server className="h-3.5 w-3.5" />;
-      case 'testing': return <CheckCircle2 className="h-3.5 w-3.5" />;
-      case 'prompting': return <Bot className="h-3.5 w-3.5" />;
+      case 'security': return <ShieldAlert className="h-3.5 w-3.5 text-rose-400" />;
+      case 'design': return <Palette className="h-3.5 w-3.5 text-purple-400" />;
+      case 'animation': return <Sparkles className="h-3.5 w-3.5 text-amber-400" />;
+      case 'clean-code': return <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />;
+      case 'mobile': return <Smartphone className="h-3.5 w-3.5 text-blue-400" />;
+      case 'frontend': return <Globe className="h-3.5 w-3.5 text-cyan-400" />;
+      case 'backend': return <Server className="h-3.5 w-3.5 text-orange-400" />;
+      case 'devops': return <Cloud className="h-3.5 w-3.5 text-sky-400" />;
+      case 'testing': return <CheckCircle2 className="h-3.5 w-3.5 text-teal-400" />;
+      case 'prompting': return <Bot className="h-3.5 w-3.5 text-indigo-400" />;
       default: return <Layers className="h-3.5 w-3.5" />;
     }
   };
 
   return (
-    <div className="w-full overflow-x-auto pb-2 scrollbar-none">
-      <div className="flex items-center gap-2 min-w-max">
+    <div className="w-full">
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
         {CATEGORIES.map((cat) => {
           const isSelected = selectedCategory === cat.id;
           const count = categoryCounts[cat.id] ?? 0;

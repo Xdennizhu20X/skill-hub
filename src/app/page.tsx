@@ -52,12 +52,14 @@ export default function HomePage() {
   const categoryCounts = useMemo(() => {
     const counts: Record<CategoryType, number> = {
       all: skills.length,
+      security: 0,
       design: 0,
       animation: 0,
       'clean-code': 0,
       mobile: 0,
       frontend: 0,
       backend: 0,
+      devops: 0,
       testing: 0,
       prompting: 0,
       other: 0,
@@ -148,6 +150,16 @@ export default function HomePage() {
   const handleCreatePack = async (packData: Omit<SkillPack, 'id' | 'created_at'>) => {
     const saved = await savePack(packData);
     setPacks((prev) => [saved, ...prev]);
+  };
+
+  // Update Skill Category
+  const handleUpdateCategory = (skillId: string, newCategory: CategoryType) => {
+    setSkills((prev) =>
+      prev.map((s) => (s.id === skillId ? { ...s, category: newCategory } : s))
+    );
+    if (detailSkill && detailSkill.id === skillId) {
+      setDetailSkill({ ...detailSkill, category: newCategory });
+    }
   };
 
   const areAllVisibleSelected =
@@ -300,6 +312,7 @@ export default function HomePage() {
         skill={detailSkill}
         onClose={() => setDetailSkill(null)}
         onDeleteSkill={handleDeleteSkill}
+        onUpdateCategory={handleUpdateCategory}
       />
 
       {/* Packs Drawer */}

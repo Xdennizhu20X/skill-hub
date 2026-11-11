@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Skill } from '@/types/skills';
+import { CategoryType, Skill } from '@/types/skills';
 import { X, Copy, Check, ExternalLink, Terminal, Trash2 } from 'lucide-react';
 import { GithubIcon } from '@/components/icons/GithubIcon';
 import { toast } from 'sonner';
@@ -10,12 +10,14 @@ interface SkillDetailModalProps {
   skill: Skill | null;
   onClose: () => void;
   onDeleteSkill: (skillId: string) => void;
+  onUpdateCategory?: (skillId: string, newCategory: CategoryType) => void;
 }
 
 export function SkillDetailModal({
   skill,
   onClose,
   onDeleteSkill,
+  onUpdateCategory,
 }: SkillDetailModalProps) {
   const [copied, setCopied] = useState(false);
 
@@ -47,9 +49,33 @@ export function SkillDetailModal({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-semibold text-white">{skill.title}</h2>
-              <span className="rounded-md bg-zinc-800 px-2 py-0.5 text-[11px] font-medium text-zinc-300">
-                {skill.category}
-              </span>
+              {onUpdateCategory ? (
+                <select
+                  value={skill.category}
+                  onChange={(e) => {
+                    const newCat = e.target.value as CategoryType;
+                    onUpdateCategory(skill.id, newCat);
+                    toast.success(`Categoría actualizada a: ${newCat}`);
+                  }}
+                  className="rounded-md bg-zinc-800 px-2 py-0.5 text-[11px] font-medium text-zinc-200 border border-zinc-700 focus:outline-none focus:border-emerald-500"
+                >
+                  <option value="security">🛡️ Seguridad</option>
+                  <option value="design">🎨 Diseño & UI</option>
+                  <option value="animation">✨ Animación</option>
+                  <option value="clean-code">🧼 Anti-Slop</option>
+                  <option value="mobile">📱 Mobile</option>
+                  <option value="frontend">🌐 Frontend</option>
+                  <option value="backend">🗄️ Backend</option>
+                  <option value="devops">☁️ DevOps</option>
+                  <option value="testing">🧪 Testing</option>
+                  <option value="prompting">🤖 Prompts</option>
+                  <option value="other">📦 Otros</option>
+                </select>
+              ) : (
+                <span className="rounded-md bg-zinc-800 px-2 py-0.5 text-[11px] font-medium text-zinc-300">
+                  {skill.category}
+                </span>
+              )}
             </div>
             <a
               href={skill.repo_url}

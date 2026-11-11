@@ -1,11 +1,13 @@
 export type CategoryType = 
   | 'all'
+  | 'security'
   | 'design'
   | 'animation'
   | 'clean-code'
   | 'mobile'
   | 'frontend'
   | 'backend'
+  | 'devops'
   | 'testing'
   | 'prompting'
   | 'other';

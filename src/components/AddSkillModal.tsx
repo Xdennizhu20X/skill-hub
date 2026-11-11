@@ -154,6 +154,14 @@ export function AddSkillModal({
           <span>Ejemplos rápidos:</span>
           <button
             type="button"
+            onClick={() => setUrl('https://github.com/cloudflare/security-audit-skill')}
+            className="text-zinc-400 hover:text-emerald-400 underline decoration-zinc-700"
+          >
+            cloudflare/security-audit-skill
+          </button>
+          <span>•</span>
+          <button
+            type="button"
             onClick={() => setUrl('https://github.com/emilkowalski/skills')}
             className="text-zinc-400 hover:text-emerald-400 underline decoration-zinc-700"
           >
@@ -216,9 +224,33 @@ export function AddSkillModal({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <span className="font-medium text-xs text-zinc-200">{skill.title}</span>
-                          <span className="text-[10px] uppercase font-semibold tracking-wider text-zinc-400 px-1.5 py-0.5 rounded bg-zinc-800">
-                            {skill.category}
-                          </span>
+                          <select
+                            value={skill.category}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              const newCat = e.target.value as any;
+                              setScrapedResult((prev) => {
+                                if (!prev) return prev;
+                                const updated = [...prev.detected_skills];
+                                updated[idx] = { ...updated[idx], category: newCat };
+                                return { ...prev, detected_skills: updated };
+                              });
+                            }}
+                            className="text-[11px] font-medium text-zinc-300 bg-zinc-800 border border-zinc-700 rounded px-1.5 py-0.5 focus:outline-none focus:border-emerald-500"
+                          >
+                            <option value="security">🛡️ Seguridad</option>
+                            <option value="design">🎨 Diseño & UI</option>
+                            <option value="animation">✨ Animación</option>
+                            <option value="clean-code">🧼 Anti-Slop</option>
+                            <option value="mobile">📱 Mobile</option>
+                            <option value="frontend">🌐 Frontend</option>
+                            <option value="backend">🗄️ Backend</option>
+                            <option value="devops">☁️ DevOps</option>
+                            <option value="testing">🧪 Testing</option>
+                            <option value="prompting">🤖 Prompts</option>
+                            <option value="other">📦 Otros</option>
+                          </select>
                         </div>
                         <p className="text-xs text-zinc-400 mt-1 line-clamp-2">
                           {skill.description}

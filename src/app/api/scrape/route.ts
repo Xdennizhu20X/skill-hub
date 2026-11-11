@@ -37,28 +37,53 @@ function parseGitHubUrl(input: string): { owner: string; repo: string; branch?: 
 function guessCategory(text: string, topics: string[] = []): CategoryType {
   const combined = (text + ' ' + topics.join(' ')).toLowerCase();
 
-  if (combined.includes('motion') || combined.includes('animation') || combined.includes('spring') || combined.includes('choreograph')) {
-    return 'animation';
+  // 1. Security & Audits (High priority: pen-test, vulnerabilities, security reviews)
+  if (/\b(security|vulnerability|vulnerabilities|audit|pen-test|pentest|cve|exploit|hardening|auth|oauth|secret|encryption|firewall)\b/i.test(combined)) {
+    return 'security';
   }
-  if (combined.includes('design') || combined.includes('ui') || combined.includes('css') || combined.includes('color') || combined.includes('apple')) {
-    return 'design';
-  }
-  if (combined.includes('anti-slop') || combined.includes('antislop') || combined.includes('clean') || combined.includes('hygiene') || combined.includes('craft')) {
+
+  // 2. Anti-Slop & Code Quality / Hygiene
+  if (/\b(anti-slop|antislop|code-smell|refactoring|code-hygiene|linter|code-review)\b/i.test(combined)) {
     return 'clean-code';
   }
-  if (combined.includes('mobile') || combined.includes('expo') || combined.includes('react-native') || combined.includes('ios') || combined.includes('touch')) {
+
+  // 3. Motion & Animation
+  if (/\b(motion|animation|animations|spring|springs|transition|transitions|choreograph|choreography|framer-motion|keyframes)\b/i.test(combined)) {
+    return 'animation';
+  }
+
+  // 4. Mobile & Native (React Native, Expo, iOS, Android, Touch)
+  if (/\b(mobile|expo|react-native|ios|android|swift|kotlin|touch-action|gestures|haptics|viewport)\b/i.test(combined)) {
     return 'mobile';
   }
-  if (combined.includes('test') || combined.includes('break') || combined.includes('qa') || combined.includes('audit')) {
+
+  // 5. Design & UI (Notice word boundaries: \bui\b and \bux\b so words like "guidance" or "suite" don't match!)
+  if (/\b(design|ui|ux|css|tailwind|palette|colors|typography|theme|styling|interface|component|components|glassmorphism|layout)\b/i.test(combined)) {
+    return 'design';
+  }
+
+  // 6. DevOps & Cloud
+  if (/\b(devops|docker|kubernetes|k8s|ci-cd|pipeline|deploy|deployment|terraform|cloudflare|aws|gcp|serverless)\b/i.test(combined)) {
+    return 'devops';
+  }
+
+  // 7. Testing & QA
+  if (/\b(test|testing|tests|qa|jest|vitest|playwright|cypress|stress-test|benchmark)\b/i.test(combined)) {
     return 'testing';
   }
-  if (combined.includes('prompt') || combined.includes('agent') || combined.includes('llm') || combined.includes('ai')) {
+
+  // 8. Prompting & AI Agents
+  if (/\b(prompt|prompts|prompting|agent|agents|system-prompt|llm|claude|gemini|openai|antigravity)\b/i.test(combined)) {
     return 'prompting';
   }
-  if (combined.includes('react') || combined.includes('frontend') || combined.includes('web') || combined.includes('html')) {
+
+  // 9. Frontend & Web
+  if (/\b(frontend|react|nextjs|next\.js|vue|svelte|html|dom|browser)\b/i.test(combined)) {
     return 'frontend';
   }
-  if (combined.includes('backend') || combined.includes('api') || combined.includes('database') || combined.includes('sql')) {
+
+  // 10. Backend & APIs
+  if (/\b(backend|api|apis|server|database|databases|sql|postgres|postgresql|prisma|supabase|graphql|rest)\b/i.test(combined)) {
     return 'backend';
   }
 

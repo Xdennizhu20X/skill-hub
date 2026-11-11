@@ -30,13 +30,16 @@ export function SkillCard({
 
   const getCategoryColor = (cat: string) => {
     switch (cat) {
+      case 'security': return 'text-rose-400 bg-rose-950/40 border-rose-800/50';
       case 'design': return 'text-purple-400 bg-purple-950/30 border-purple-800/40';
       case 'animation': return 'text-amber-400 bg-amber-950/30 border-amber-800/40';
       case 'clean-code': return 'text-emerald-400 bg-emerald-950/30 border-emerald-800/40';
       case 'mobile': return 'text-blue-400 bg-blue-950/30 border-blue-800/40';
       case 'frontend': return 'text-cyan-400 bg-cyan-950/30 border-cyan-800/40';
-      case 'backend': return 'text-rose-400 bg-rose-950/30 border-rose-800/40';
-      case 'testing': return 'text-orange-400 bg-orange-950/30 border-orange-800/40';
+      case 'backend': return 'text-orange-400 bg-orange-950/30 border-orange-800/40';
+      case 'devops': return 'text-sky-400 bg-sky-950/30 border-sky-800/40';
+      case 'testing': return 'text-teal-400 bg-teal-950/30 border-teal-800/40';
+      case 'prompting': return 'text-indigo-400 bg-indigo-950/30 border-indigo-800/40';
       default: return 'text-zinc-400 bg-zinc-800/50 border-zinc-700/40';
     }
   };

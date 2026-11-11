@@ -2,17 +2,34 @@ import { CategoryDef, Skill, SkillPack } from "@/types/skills";
 
 export const CATEGORIES: CategoryDef[] = [
   { id: 'all', label: 'Todas las Skills', iconName: 'Layers', description: 'Catálogo completo' },
+  { id: 'security', label: 'Seguridad & Auditoría', iconName: 'ShieldAlert', description: 'Vulnerabilidades, pen-testing y seguridad' },
   { id: 'design', label: 'Diseño & UI', iconName: 'Palette', description: 'Craft visual, sistemas y polish' },
   { id: 'animation', label: 'Animación & Motion', iconName: 'Sparkles', description: 'Microinteracciones, resortes y gestos' },
   { id: 'clean-code', label: 'Anti-Slop & Calidad', iconName: 'ShieldCheck', description: 'Código limpio, sin slop ni ruido' },
   { id: 'mobile', label: 'Mobile & Nativo', iconName: 'Smartphone', description: 'Touch, viewport y UX móvil real' },
   { id: 'frontend', label: 'Frontend & Web', iconName: 'Globe', description: 'React, Next.js y ecosistema web' },
   { id: 'backend', label: 'Backend & APIs', iconName: 'Server', description: 'Servicios, bases de datos y arquitectura' },
+  { id: 'devops', label: 'DevOps & Cloud', iconName: 'Cloud', description: 'Infraestructura, CI/CD y despliegue' },
   { id: 'testing', label: 'Testing & QA', iconName: 'CheckCircle2', description: 'Stress test y validación' },
   { id: 'prompting', label: 'Agentes & Prompts', iconName: 'Bot', description: 'Reglas y orquestación de IA' },
 ];
 
 export const INITIAL_SKILLS: Skill[] = [
+  // Cloudflare Security Skills
+  {
+    id: 'cloudflare-security-audit',
+    name: 'security-audit',
+    title: 'Security Audit & Vulnerabilities',
+    repo: 'cloudflare/security-audit-skill',
+    repo_url: 'https://github.com/cloudflare/security-audit-skill',
+    description: 'Revisión exhaustiva de vulnerabilidades y seguridad para código, APIs, servicios, CLI tools y demonios. Ideal para auditorías y pen-tests.',
+    category: 'security',
+    tags: ['security', 'audit', 'vulnerability', 'cloudflare', 'pen-test'],
+    author: 'cloudflare',
+    install_command: 'npx skills add cloudflare/security-audit-skill',
+    is_favorite: true,
+    created_at: '2026-11-11T11:00:00Z',
+  },
   // Emil Kowalski Design & Motion Skills
   {
     id: 'emil-animate',
