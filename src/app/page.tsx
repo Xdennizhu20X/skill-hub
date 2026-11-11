@@ -28,7 +28,6 @@ export default function HomePage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [isPacksDrawerOpen, setIsPacksDrawerOpen] = useState<boolean>(false);
   const [detailSkill, setDetailSkill] = useState<Skill | null>(null);
-  const [showCloudInfo, setShowCloudInfo] = useState<boolean>(false);
 
   // Initial load
   useEffect(() => {
@@ -180,41 +179,6 @@ export default function HomePage() {
 
       {/* Main Content Area */}
       <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
-        {/* Supabase Notice Banner if in Local Mode */}
-        {!isCloud && (
-          <div className="mb-6 rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5 sm:p-4 text-xs text-zinc-400 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-2 w-2 rounded-full bg-emerald-400 ring-4 ring-emerald-950" />
-              <span>
-                <strong className="text-zinc-200">Catálogo Inicial Cargado:</strong> Incluye las skills de Emil Kowalski y Anti-Slop listas para usar. Al desplegar en Vercel puedes conectar tu Supabase con un clic para multiusuario.
-              </span>
-            </div>
-            <button
-              onClick={() => setShowCloudInfo(!showCloudInfo)}
-              className="tap-active text-emerald-400 hover:text-emerald-300 font-medium whitespace-nowrap self-start sm:self-auto"
-            >
-              {showCloudInfo ? 'Ocultar guía' : 'Ver cómo conectar Supabase'}
-            </button>
-          </div>
-        )}
-
-        {/* Cloud Setup Guide Accordion */}
-        {showCloudInfo && (
-          <div className="mb-6 rounded-xl border border-emerald-500/20 bg-zinc-900/90 p-4 text-xs text-zinc-300 space-y-2">
-            <h4 className="font-semibold text-white">Cómo habilitar Supabase en Vercel:</h4>
-            <ol className="list-decimal list-inside space-y-1 text-zinc-400">
-              <li>Crea un proyecto gratis en <a href="https://supabase.com" target="_blank" className="text-emerald-400 underline">supabase.com</a>.</li>
-              <li>En el <strong>SQL Editor</strong> de Supabase, copia y pega el archivo <code className="text-zinc-200 bg-zinc-800 px-1 py-0.5 rounded">supabase/schema.sql</code>.</li>
-              <li>En Vercel (Settings &gt; Environment Variables), añade:
-                <div className="font-mono bg-zinc-950 p-2 rounded border border-zinc-800 mt-1 text-zinc-300">
-                  NEXT_PUBLIC_SUPABASE_URL=tu_url_de_supabase<br/>
-                  NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key
-                </div>
-              </li>
-            </ol>
-          </div>
-        )}
-
         {/* Categories Bar */}
         <div className="mb-4">
           <CategoryFilter
