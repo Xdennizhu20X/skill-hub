@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { CategoryType, TechnologyType, Skill, SkillPack } from '@/types/skills';
-import { fetchSkills, fetchPacks, saveSkill, deleteSkill, savePack } from '@/lib/supabase';
+import { fetchSkills, fetchPacks, saveSkill, deleteSkill, savePack, updateSkillNotes } from '@/lib/supabase';
 import { INITIAL_SKILLS, INITIAL_PACKS } from '@/lib/seed-data';
 import { Navbar } from '@/components/Navbar';
 import { CategoryFilter } from '@/components/CategoryFilter';
@@ -13,7 +13,9 @@ import { AddSkillModal } from '@/components/AddSkillModal';
 import { SkillSlideOver } from '@/components/SkillSlideOver';
 import { PacksDrawer } from '@/components/PacksDrawer';
 import { CommandPalette } from '@/components/CommandPalette';
-import { Sparkles, Terminal, CheckSquare, Square, Layers } from 'lucide-react';
+import { ExploreModal } from '@/components/ExploreModal';
+import { CompareModal } from '@/components/CompareModal';
+import { CheckSquare, Square, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function HomePage() {
@@ -32,6 +34,8 @@ export default function HomePage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [isPacksDrawerOpen, setIsPacksDrawerOpen] = useState<boolean>(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
+  const [isExploreModalOpen, setIsExploreModalOpen] = useState<boolean>(false);
+  const [isCompareModalOpen, setIsCompareModalOpen] = useState<boolean>(false);
   const [detailSkill, setDetailSkill] = useState<Skill | null>(null);
 
   // Global Ctrl+K / Cmd+K listener
@@ -163,6 +167,12 @@ export default function HomePage() {
     setSkills((prev) => [...addedList, ...prev]);
   };
 
+  // Add single skill (from Explore modal)
+  const handleAddSingleSkill = async (item: Omit<Skill, 'id' | 'created_at'>) => {
+    const saved = await saveSkill(item);
+    setSkills((prev) => [saved, ...prev]);
+  };
+
   // Delete skill
   const handleDeleteSkill = async (skillId: string) => {
     await deleteSkill(skillId);
@@ -186,17 +196,29 @@ export default function HomePage() {
     }
   };
 
+  // Update Personal Notes
+  const handleUpdateNotes = async (skillId: string, notes: string) => {
+    await updateSkillNotes(skillId, notes);
+    setSkills((prev) =>
+      prev.map((s) => (s.id === skillId ? { ...s, notes } : s))
+    );
+    if (detailSkill && detailSkill.id === skillId) {
+      setDetailSkill({ ...detailSkill, notes });
+    }
+  };
+
   const areAllVisibleSelected =
     filteredSkills.length > 0 &&
     filteredSkills.every((s) => selectedSkillIds.includes(s.id));
 
   return (
     <main className="min-h-screen pb-32">
-      {/* Navbar with Command Palette trigger */}
+      {/* Navbar with Command Palette and Explore trigger */}
       <Navbar
         onOpenAddModal={() => setIsAddModalOpen(true)}
         onOpenPacksDrawer={() => setIsPacksDrawerOpen(true)}
         onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+        onOpenExploreModal={() => setIsExploreModalOpen(true)}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         isCloud={isCloud}
@@ -265,12 +287,20 @@ export default function HomePage() {
                 ? `No hay resultados para los filtros seleccionados.`
                 : 'No hay skills registradas en esta categoría aún.'}
             </p>
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="tap-active mt-4 rounded-lg bg-emerald-500 px-3.5 py-1.5 text-xs font-semibold text-zinc-950 hover:bg-emerald-400"
-            >
-              Registrar nueva skill desde GitHub
-            </button>
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={() => setIsExploreModalOpen(true)}
+                className="tap-active rounded-lg border border-zinc-700 bg-zinc-800 px-3.5 py-1.5 text-xs font-semibold text-zinc-200 hover:text-white"
+              >
+                Explorar catálogo popular
+              </button>
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="tap-active rounded-lg bg-emerald-500 px-3.5 py-1.5 text-xs font-semibold text-zinc-950 hover:bg-emerald-400"
+              >
+                Registrar nueva skill
+              </button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -287,11 +317,12 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* Sticky Multi-Select Command Generator Bar (with Windows PowerShell & lockfile support) */}
+      {/* Sticky Multi-Select Command Generator Bar */}
       <MultiSelectBar
         selectedSkills={selectedSkillsObjects}
         onClearSelection={() => setSelectedSkillIds([])}
         onSaveAsPack={() => setIsPacksDrawerOpen(true)}
+        onCompare={() => setIsCompareModalOpen(true)}
       />
 
       {/* Add Skill Modal (GitHub Scraping, WhatsApp text paste & Lockfile import) */}
@@ -301,12 +332,13 @@ export default function HomePage() {
         onAddSkills={handleAddSkills}
       />
 
-      {/* Slide-over Sheet for Skill Details */}
+      {/* Slide-over Sheet for Skill Details & Notes */}
       <SkillSlideOver
         skill={detailSkill}
         onClose={() => setDetailSkill(null)}
         onDeleteSkill={handleDeleteSkill}
         onUpdateCategory={handleUpdateCategory}
+        onUpdateNotes={handleUpdateNotes}
       />
 
       {/* Packs Drawer */}
@@ -330,6 +362,21 @@ export default function HomePage() {
         onSelectCategory={(cat) => setSelectedCategory(cat)}
         onOpenAddModal={() => setIsAddModalOpen(true)}
         onViewSkill={(skill) => setDetailSkill(skill)}
+      />
+
+      {/* Explore Popular Skills Modal */}
+      <ExploreModal
+        isOpen={isExploreModalOpen}
+        onClose={() => setIsExploreModalOpen(false)}
+        existingSkills={skills}
+        onAddSkill={handleAddSingleSkill}
+      />
+
+      {/* Side-by-Side Compare Modal */}
+      <CompareModal
+        isOpen={isCompareModalOpen}
+        onClose={() => setIsCompareModalOpen(false)}
+        skills={selectedSkillsObjects}
       />
     </main>
   );

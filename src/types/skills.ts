@@ -47,6 +47,7 @@ export interface Skill {
   author: string;
   install_command: string;
   raw_content?: string;
+  notes?: string;
   is_favorite?: boolean;
   user_id?: string;
   created_at: string;

@@ -23,6 +23,7 @@ interface SkillSlideOverProps {
   onClose: () => void;
   onDeleteSkill: (skillId: string) => void;
   onUpdateCategory: (skillId: string, newCategory: CategoryType) => void;
+  onUpdateNotes: (skillId: string, notes: string) => void;
 }
 
 export function SkillSlideOver({
@@ -30,9 +31,17 @@ export function SkillSlideOver({
   onClose,
   onDeleteSkill,
   onUpdateCategory,
+  onUpdateNotes,
 }: SkillSlideOverProps) {
   const [copiedFormat, setCopiedFormat] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'readme'>('overview');
+  const [notesText, setNotesText] = useState(skill?.notes || '');
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
+
+  // Sync notes when skill changes
+  React.useEffect(() => {
+    setNotesText(skill?.notes || '');
+  }, [skill]);
 
   if (!skill) return null;
 
@@ -147,6 +156,33 @@ export function SkillSlideOver({
             {/* Tab: Overview */}
             {activeTab === 'overview' && (
               <div className="mt-5 space-y-5">
+                {/* Personal Notes */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-amber-400">
+                      Mis Notas Personales
+                    </h4>
+                    <button
+                      onClick={() => {
+                        setIsSavingNotes(true);
+                        onUpdateNotes(skill.id, notesText);
+                        toast.success('Notas guardadas');
+                        setTimeout(() => setIsSavingNotes(false), 500);
+                      }}
+                      className="tap-active text-[11px] font-medium text-emerald-400 hover:text-emerald-300"
+                    >
+                      {isSavingNotes ? 'Guardando...' : 'Guardar notas'}
+                    </button>
+                  </div>
+                  <textarea
+                    value={notesText}
+                    onChange={(e) => setNotesText(e.target.value)}
+                    placeholder="Escribe por qué guardaste esta skill, en qué proyectos la usaste o consejos rápidos..."
+                    rows={3}
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-900/40 p-2.5 text-xs text-zinc-200 placeholder:text-zinc-600 focus:border-amber-500/50 focus:outline-none transition-colors"
+                  />
+                </div>
+
                 {/* Description */}
                 <div>
                   <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">
@@ -220,21 +256,33 @@ export function SkillSlideOver({
                       </code>
                     </div>
 
-                    {/* Claude Code */}
+                    {/* Direct Prompt */}
                     <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-2.5">
                       <div className="flex items-center justify-between text-[11px] text-zinc-400 mb-1">
-                        <span className="font-medium text-zinc-300">Claude Code</span>
+                        <span className="font-medium text-amber-300">Prompt Directo (Sin Instalar)</span>
                         <button
-                          onClick={() => handleCopy(getCommand('claude'), 'claude')}
-                          className="tap-active text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                          onClick={() => {
+                            const promptText = `Por favor aplica las siguientes directrices y reglas de craft para esta tarea:
+
+# Skill: ${skill.title} (${skill.name})
+Repositorio: ${skill.repo}
+Categoría: ${skill.category}
+
+## Propósito:
+${skill.description}
+${skill.raw_content ? `\n## Reglas e instrucciones detalladas:\n${skill.raw_content.slice(0, 2000)}` : ''}`;
+                            navigator.clipboard.writeText(promptText);
+                            toast.success('Prompt copiado para usar en ChatGPT / Claude Web / Cursor');
+                          }}
+                          className="tap-active text-amber-400 hover:text-amber-300 flex items-center gap-1"
                         >
-                          {copiedFormat === 'claude' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                          <span>{copiedFormat === 'claude' ? 'Copiado' : 'Copiar'}</span>
+                          <Copy className="h-3 w-3" />
+                          <span>Copiar Prompt para Chats</span>
                         </button>
                       </div>
-                      <code className="text-[11px] font-mono text-zinc-200 block truncate">
-                        {getCommand('claude')}
-                      </code>
+                      <p className="text-[11px] text-zinc-500">
+                        Copia las instrucciones de la skill para pegarlas en cualquier chat de IA sin necesidad de instalar en consola.
+                      </p>
                     </div>
                   </div>
                 </div>

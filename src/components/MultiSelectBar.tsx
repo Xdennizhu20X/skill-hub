@@ -2,13 +2,23 @@
 
 import React, { useState } from 'react';
 import { Skill } from '@/types/skills';
-import { Copy, Check, Terminal, X, Sparkles, Code2, Download, FileCode } from 'lucide-react';
+import { 
+  Copy, 
+  Check, 
+  Terminal, 
+  X, 
+  Sparkles, 
+  Download, 
+  FileCode, 
+  ArrowLeftRight 
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 interface MultiSelectBarProps {
   selectedSkills: Skill[];
   onClearSelection: () => void;
   onSaveAsPack: (skillIds: string[]) => void;
+  onCompare?: () => void;
 }
 
 type CommandFormat = 'skills-cli' | 'claude' | 'cursor' | 'powershell' | 'json';
@@ -17,6 +27,7 @@ export function MultiSelectBar({
   selectedSkills,
   onClearSelection,
   onSaveAsPack,
+  onCompare,
 }: MultiSelectBarProps) {
   const [copied, setCopied] = useState(false);
   const [format, setFormat] = useState<CommandFormat>('skills-cli');
@@ -112,8 +123,37 @@ export function MultiSelectBar({
     toast.success(`Archivo descargado: ${filename}`);
   };
 
+  const handleDownloadAgentsMd = () => {
+    let md = `# Instructions for AI Coding Agents (AGENTS.md)\n\n`;
+    md += `This repository uses the following specialized skills:\n\n`;
+    md += `<!-- skills:start -->\n`;
+    selectedSkills.forEach((s, idx) => {
+      md += `### ${idx + 1}. ${s.title} (\`${s.name}\`)\n`;
+      md += `- **Repository:** ${s.repo}\n`;
+      md += `- **Category:** ${s.category}\n`;
+      md += `- **Purpose:** ${s.description}\n`;
+      if (s.allowed_tools && s.allowed_tools.length > 0) {
+        md += `- **Allowed Tools:** ${s.allowed_tools.join(', ')}\n`;
+      }
+      md += `- **Install Command:** \`${s.install_command}\`\n\n`;
+    });
+    md += `<!-- skills:end -->\n\n`;
+    md += `## Guidelines for Claude Code, Cursor and Antigravity\n`;
+    md += `- Consult the skills above when planning and executing architectural or UI changes.\n`;
+    md += `- Maintain clean code standards, strict type safety, and verify functionality before finalizing.\n`;
+
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'AGENTS.md';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Archivo AGENTS.md generado y descargado para tu proyecto');
+  };
+
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-40 mx-auto max-w-4xl animate-in fade-in slide-in-from-bottom-4 duration-200">
+    <div className="fixed bottom-4 left-4 right-4 z-40 mx-auto max-w-5xl animate-in fade-in slide-in-from-bottom-4 duration-200">
       <div className="flex flex-col gap-3 rounded-2xl border border-zinc-700/80 bg-zinc-900/95 p-3.5 shadow-2xl backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:p-4">
         {/* Left: Count & Skill preview */}
         <div className="flex items-center gap-3">
@@ -184,21 +224,43 @@ export function MultiSelectBar({
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2">
+          {/* Compare Button (if exactly 2 skills are selected) */}
+          {selectedSkills.length === 2 && onCompare && (
+            <button
+              onClick={onCompare}
+              className="tap-active flex items-center gap-1 rounded-lg border border-cyan-500/40 bg-cyan-950/30 px-2.5 py-2 text-xs font-semibold text-cyan-300 hover:bg-cyan-950/50 transition-colors"
+              title="Comparar las 2 skills seleccionadas lado a lado"
+            >
+              <ArrowLeftRight className="h-3.5 w-3.5" />
+              <span>Comparar</span>
+            </button>
+          )}
+
+          {/* Generate AGENTS.md button */}
+          <button
+            onClick={handleDownloadAgentsMd}
+            className="tap-active flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/80 px-2.5 py-2 text-xs font-medium text-zinc-200 hover:bg-zinc-700 hover:text-white transition-colors"
+            title="Generar y descargar archivo AGENTS.md para este proyecto"
+          >
+            <FileCode className="h-3.5 w-3.5 text-emerald-400" />
+            <span className="hidden lg:inline">AGENTS.md</span>
+          </button>
+
           {/* Save as pack */}
           <button
             onClick={() => onSaveAsPack(selectedSkills.map((s) => s.id))}
-            className="tap-active flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/80 px-3 py-2 text-xs font-medium text-zinc-200 hover:bg-zinc-700 hover:text-white transition-colors"
+            className="tap-active flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/80 px-2.5 py-2 text-xs font-medium text-zinc-200 hover:bg-zinc-700 hover:text-white transition-colors"
             title="Guardar selección como un Pack reutilizable"
           >
             <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-            <span className="hidden md:inline">Guardar Pack</span>
+            <span className="hidden md:inline">Pack</span>
           </button>
 
           {/* Download script */}
           <button
             onClick={handleDownloadScript}
-            className="tap-active flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/80 px-2.5 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
-            title={`Descargar ${format === 'powershell' ? 'script de PowerShell (.ps1)' : format === 'json' ? 'skills-lock.json' : 'script'}`}
+            className="tap-active flex items-center gap-1 rounded-lg border border-zinc-700 bg-zinc-800/80 px-2 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
+            title={`Descargar ${format === 'powershell' ? 'PowerShell (.ps1)' : format === 'json' ? 'skills-lock.json' : 'script'}`}
           >
             <Download className="h-3.5 w-3.5 text-emerald-400" />
             <span className="text-[11px] font-mono hidden sm:inline">
@@ -209,7 +271,7 @@ export function MultiSelectBar({
           {/* Copy Command Main CTA */}
           <button
             onClick={handleCopy}
-            className="tap-active flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-xs font-semibold text-zinc-950 hover:bg-emerald-400 shadow-md shadow-emerald-500/20 transition-all"
+            className="tap-active flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-3.5 py-2 text-xs font-semibold text-zinc-950 hover:bg-emerald-400 shadow-md shadow-emerald-500/20 transition-all"
           >
             {copied ? (
               <>

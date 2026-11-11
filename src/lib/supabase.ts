@@ -126,6 +126,27 @@ export async function saveSkill(skill: Omit<Skill, 'id' | 'created_at'>): Promis
   return newSkill;
 }
 
+export async function updateSkillNotes(skillId: string, notes: string): Promise<boolean> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      await withTimeout(supabase.from('skills').update({ notes }).eq('id', skillId), 3000);
+    } catch {
+      // ignore
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    const current = localStorage.getItem(LOCAL_STORAGE_SKILLS_KEY);
+    if (current) {
+      const list: Skill[] = JSON.parse(current);
+      const updated = list.map(s => s.id === skillId ? { ...s, notes } : s);
+      localStorage.setItem(LOCAL_STORAGE_SKILLS_KEY, JSON.stringify(updated));
+    }
+  }
+
+  return true;
+}
+
 export async function deleteSkill(skillId: string): Promise<boolean> {
   if (isSupabaseConfigured && supabase) {
     try {

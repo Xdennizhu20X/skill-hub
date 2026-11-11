@@ -1,12 +1,13 @@
 'use client';
 
 import React from 'react';
-import { Plus, Database, Sparkles, Search, Layers, Command } from 'lucide-react';
+import { Plus, Database, Sparkles, Search, Layers, Compass } from 'lucide-react';
 
 interface NavbarProps {
   onOpenAddModal: () => void;
   onOpenPacksDrawer: () => void;
   onOpenCommandPalette: () => void;
+  onOpenExploreModal: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   isCloud: boolean;
@@ -17,6 +18,7 @@ export function Navbar({
   onOpenAddModal,
   onOpenPacksDrawer,
   onOpenCommandPalette,
+  onOpenExploreModal,
   searchQuery,
   onSearchChange,
   isCloud,
@@ -68,7 +70,7 @@ export function Navbar({
           {/* Cloud Indicator Badge */}
           <div 
             title={isCloud ? "Conectado a Supabase (Sincronizado)" : "Modo Local (Configura Supabase en .env para Multi-usuario)"}
-            className={`hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs border ${
+            className={`hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs border ${
               isCloud 
                 ? 'border-emerald-500/20 bg-emerald-950/20 text-emerald-400' 
                 : 'border-zinc-800 bg-zinc-900 text-zinc-400'
@@ -77,6 +79,16 @@ export function Navbar({
             <Database className="h-3.5 w-3.5" />
             <span>{isCloud ? 'Cloud' : 'Local'}</span>
           </div>
+
+          {/* Explore / Directory Button */}
+          <button
+            onClick={onOpenExploreModal}
+            className="tap-active flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-200 hover:bg-zinc-800 hover:text-white transition-colors"
+            title="Explorar skills populares de Vercel Labs, Cloudflare, Anthropic, etc."
+          >
+            <Compass className="h-3.5 w-3.5 text-emerald-400" />
+            <span className="hidden sm:inline">Descubrir</span>
+          </button>
 
           {/* Stacks / Packs Button */}
           <button
@@ -93,7 +105,8 @@ export function Navbar({
             className="tap-active flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3.5 py-1.5 text-xs font-semibold text-zinc-950 hover:bg-emerald-400 shadow-sm shadow-emerald-500/20 transition-all"
           >
             <Plus className="h-4 w-4" />
-            <span>Agregar Skill</span>
+            <span className="hidden sm:inline">Agregar Skill</span>
+            <span className="sm:hidden">Agregar</span>
           </button>
         </div>
       </div>

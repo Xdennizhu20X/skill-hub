@@ -16,6 +16,7 @@ create table if not exists public.skills (
   author text not null,
   install_command text not null,
   raw_content text,
+  notes text,
   is_public boolean default true,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null

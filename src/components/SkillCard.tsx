@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Skill } from '@/types/skills';
-import { Copy, Check, ExternalLink, Terminal, Tag, Star } from 'lucide-react';
+import { Copy, Check, ExternalLink, Terminal, Tag, MessageSquareQuote, StickyNote } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SkillCardProps {
@@ -19,6 +19,7 @@ export function SkillCard({
   onViewDetails,
 }: SkillCardProps) {
   const [copied, setCopied] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
 
   const handleCopyCommand = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -26,6 +27,24 @@ export function SkillCard({
     setCopied(true);
     toast.success(`Comando copiado: ${skill.name}`);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyPrompt = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const promptText = `Por favor aplica las siguientes directrices y reglas de la skill en nuestra tarea:
+
+# Skill: ${skill.title} (${skill.name})
+Repositorio: ${skill.repo}
+Categoría: ${skill.category}
+
+## Propósito:
+${skill.description}
+${skill.raw_content ? `\n## Reglas e instrucciones detalladas:\n${skill.raw_content.slice(0, 1500)}` : ''}`;
+
+    navigator.clipboard.writeText(promptText);
+    setCopiedPrompt(true);
+    toast.success(`Prompt de "${skill.name}" copiado para pegar en chats`);
+    setTimeout(() => setCopiedPrompt(false), 2000);
   };
 
   const getCategoryColor = (cat: string) => {
@@ -89,6 +108,14 @@ export function SkillCard({
           {skill.description}
         </p>
 
+        {/* Notes if available */}
+        {skill.notes && (
+          <div className="mb-3 flex items-start gap-1.5 p-2 rounded-lg bg-amber-950/20 border border-amber-800/30 text-[11px] text-amber-300">
+            <StickyNote className="h-3 w-3 shrink-0 mt-0.5 text-amber-400" />
+            <span className="line-clamp-2">{skill.notes}</span>
+          </div>
+        )}
+
         {/* Badges: Allowed tools, Tech, Tags */}
         <div className="flex flex-wrap items-center gap-1.5 mb-3">
           {skill.allowed_tools && skill.allowed_tools.length > 0 && (
@@ -114,24 +141,41 @@ export function SkillCard({
 
       {/* Footer / Actions */}
       <div className="pt-3 border-t border-zinc-800/60 flex items-center justify-between gap-2">
-        {/* Fast Copy Command */}
-        <button
-          onClick={handleCopyCommand}
-          className="tap-active flex items-center gap-1.5 rounded-md bg-zinc-800/70 hover:bg-zinc-800 px-2.5 py-1 text-xs text-zinc-300 hover:text-white transition-colors"
-          title="Copiar comando de instalación"
-        >
-          {copied ? (
-            <>
+        {/* Actions Left */}
+        <div className="flex items-center gap-1.5">
+          {/* Fast Copy Command */}
+          <button
+            onClick={handleCopyCommand}
+            className="tap-active flex items-center gap-1.5 rounded-md bg-zinc-800/70 hover:bg-zinc-800 px-2.5 py-1 text-xs text-zinc-300 hover:text-white transition-colors"
+            title="Copiar comando de instalación"
+          >
+            {copied ? (
+              <>
+                <Check className="h-3.5 w-3.5 text-emerald-400" />
+                <span className="text-[11px] font-medium text-emerald-400">Copiado</span>
+              </>
+            ) : (
+              <>
+                <Terminal className="h-3.5 w-3.5 text-zinc-400" />
+                <span className="text-[11px] font-medium">Instalar</span>
+              </>
+            )}
+          </button>
+
+          {/* Copy Prompt for Chats */}
+          <button
+            onClick={handleCopyPrompt}
+            className="tap-active flex items-center gap-1 rounded-md bg-zinc-800/40 hover:bg-zinc-800 px-2 py-1 text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+            title="Copiar prompt para usar sin instalar (ChatGPT, Claude web, etc.)"
+          >
+            {copiedPrompt ? (
               <Check className="h-3.5 w-3.5 text-emerald-400" />
-              <span className="text-[11px] font-medium text-emerald-400">Copiado</span>
-            </>
-          ) : (
-            <>
-              <Terminal className="h-3.5 w-3.5 text-zinc-400" />
-              <span className="text-[11px] font-medium">Copiar comando</span>
-            </>
-          )}
-        </button>
+            ) : (
+              <MessageSquareQuote className="h-3.5 w-3.5" />
+            )}
+            <span className="text-[11px] hidden sm:inline">Prompt</span>
+          </button>
+        </div>
 
         {/* View Details */}
         <div className="flex items-center gap-1">
