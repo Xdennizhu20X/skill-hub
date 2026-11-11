@@ -2,8 +2,19 @@ import { createClient } from '@supabase/supabase-js';
 import { Skill, SkillPack } from '@/types/skills';
 import { INITIAL_SKILLS, INITIAL_PACKS } from './seed-data';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+function sanitizeUrl(raw?: string): string | null {
+  if (!raw) return null;
+  let url = raw.trim();
+  if (url.startsWith('http://')) {
+    url = url.replace('http://', 'https://');
+  } else if (!url.startsWith('https://')) {
+    url = `https://${url}`;
+  }
+  return url;
+}
+
+const supabaseUrl = sanitizeUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl && 
@@ -12,25 +23,50 @@ export const isSupabaseConfigured = Boolean(
 );
 
 export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl!, supabaseAnonKey!)
+  ? createClient(supabaseUrl!, supabaseAnonKey!, {
+      auth: { persistSession: true },
+      global: {
+        headers: { 'x-application-name': 'SkillsHub' },
+      },
+    })
   : null;
 
 const LOCAL_STORAGE_SKILLS_KEY = 'skillshub_custom_skills';
 const LOCAL_STORAGE_PACKS_KEY = 'skillshub_custom_packs';
 
+// Helper for timeout
+async function withTimeout<T>(thenable: PromiseLike<T>, ms = 3500): Promise<T> {
+  let timer: NodeJS.Timeout;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('Supabase request timeout')), ms);
+  });
+  return Promise.race([Promise.resolve(thenable), timeoutPromise]).finally(() => clearTimeout(timer));
+}
+
 export async function fetchSkills(): Promise<{ skills: Skill[]; isCloud: boolean }> {
   if (isSupabaseConfigured && supabase) {
     try {
-      const { data, error } = await supabase
-        .from('skills')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data, error } = await withTimeout(
+        supabase
+          .from('skills')
+          .select('*')
+          .order('created_at', { ascending: false })
+      );
 
-      if (!error && data && data.length > 0) {
-        return { skills: data as Skill[], isCloud: true };
+      if (!error && data) {
+        if (data.length > 0) {
+          // Merge custom from cloud with initial
+          const map = new Map<string, Skill>();
+          INITIAL_SKILLS.forEach(s => map.set(s.id, s));
+          (data as Skill[]).forEach(s => map.set(s.id, s));
+          return { skills: Array.from(map.values()), isCloud: true };
+        }
+        return { skills: INITIAL_SKILLS, isCloud: true };
+      } else if (error) {
+        console.warn('Supabase fetch error, using local fallback:', error.message);
       }
-    } catch {
-      // Fallback if network or table error
+    } catch (err) {
+      console.warn('Supabase connection timeout/error:', err);
     }
   }
 
@@ -40,7 +76,6 @@ export async function fetchSkills(): Promise<{ skills: Skill[]; isCloud: boolean
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Merge initial with custom
         const mergedMap = new Map<string, Skill>();
         INITIAL_SKILLS.forEach(s => mergedMap.set(s.id, s));
         parsed.forEach((s: Skill) => mergedMap.set(s.id, s));
@@ -63,11 +98,14 @@ export async function saveSkill(skill: Omit<Skill, 'id' | 'created_at'>): Promis
 
   if (isSupabaseConfigured && supabase) {
     try {
-      const { data, error } = await supabase
-        .from('skills')
-        .insert([skill])
-        .select()
-        .single();
+      const { data, error } = await withTimeout(
+        supabase
+          .from('skills')
+          .insert([skill])
+          .select()
+          .single(),
+        4000
+      );
 
       if (!error && data) {
         return data as Skill;
@@ -91,7 +129,7 @@ export async function saveSkill(skill: Omit<Skill, 'id' | 'created_at'>): Promis
 export async function deleteSkill(skillId: string): Promise<boolean> {
   if (isSupabaseConfigured && supabase) {
     try {
-      await supabase.from('skills').delete().eq('id', skillId);
+      await withTimeout(supabase.from('skills').delete().eq('id', skillId), 3000);
     } catch {
       // ignore
     }
@@ -112,13 +150,19 @@ export async function deleteSkill(skillId: string): Promise<boolean> {
 export async function fetchPacks(): Promise<SkillPack[]> {
   if (isSupabaseConfigured && supabase) {
     try {
-      const { data, error } = await supabase
-        .from('packs')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data, error } = await withTimeout(
+        supabase
+          .from('packs')
+          .select('*')
+          .order('created_at', { ascending: false }),
+        3500
+      );
 
       if (!error && data && data.length > 0) {
-        return data as SkillPack[];
+        const map = new Map<string, SkillPack>();
+        INITIAL_PACKS.forEach(p => map.set(p.id, p));
+        (data as SkillPack[]).forEach(p => map.set(p.id, p));
+        return Array.from(map.values());
       }
     } catch {
       // Fallback
@@ -152,11 +196,14 @@ export async function savePack(pack: Omit<SkillPack, 'id' | 'created_at'>): Prom
 
   if (isSupabaseConfigured && supabase) {
     try {
-      const { data, error } = await supabase
-        .from('packs')
-        .insert([pack])
-        .select()
-        .single();
+      const { data, error } = await withTimeout(
+        supabase
+          .from('packs')
+          .insert([pack])
+          .select()
+          .single(),
+        4000
+      );
 
       if (!error && data) {
         return data as SkillPack;

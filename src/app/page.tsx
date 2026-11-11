@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { CategoryType, Skill, SkillPack } from '@/types/skills';
 import { fetchSkills, fetchPacks, saveSkill, deleteSkill, savePack } from '@/lib/supabase';
+import { INITIAL_SKILLS, INITIAL_PACKS } from '@/lib/seed-data';
 import { Navbar } from '@/components/Navbar';
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { SkillCard } from '@/components/SkillCard';
@@ -14,10 +15,10 @@ import { Sparkles, Terminal, Info, CheckSquare, Square, Layers } from 'lucide-re
 import { toast } from 'sonner';
 
 export default function HomePage() {
-  const [skills, setSkills] = useState<Skill[]>([]);
-  const [packs, setPacks] = useState<SkillPack[]>([]);
+  const [skills, setSkills] = useState<Skill[]>(INITIAL_SKILLS);
+  const [packs, setPacks] = useState<SkillPack[]>(INITIAL_PACKS);
   const [isCloud, setIsCloud] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
 
   // Filters & Search
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>('all');
