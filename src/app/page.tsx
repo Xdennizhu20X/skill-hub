@@ -4,18 +4,20 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { CategoryType, TechnologyType, Skill, SkillPack } from '@/types/skills';
 import { fetchSkills, fetchPacks, saveSkill, deleteSkill, savePack, updateSkillNotes } from '@/lib/supabase';
 import { INITIAL_SKILLS, INITIAL_PACKS } from '@/lib/seed-data';
+import { isSoundEnabled, setSoundEnabled, playClickSound, playPopSound, playSuccessSound } from '@/lib/sound';
 import { Navbar } from '@/components/Navbar';
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { TechFilter } from '@/components/TechFilter';
 import { SkillCard } from '@/components/SkillCard';
-import { MultiSelectBar } from '@/components/MultiSelectBar';
+import { ArchitectureStudio } from '@/components/ArchitectureStudio';
+import { FloatingDock } from '@/components/FloatingDock';
 import { AddSkillModal } from '@/components/AddSkillModal';
 import { SkillSlideOver } from '@/components/SkillSlideOver';
 import { PacksDrawer } from '@/components/PacksDrawer';
 import { CommandPalette } from '@/components/CommandPalette';
 import { ExploreModal } from '@/components/ExploreModal';
 import { CompareModal } from '@/components/CompareModal';
-import { CheckSquare, Square, Layers } from 'lucide-react';
+import { CheckSquare, Square, Layers, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function HomePage() {
@@ -23,6 +25,10 @@ export default function HomePage() {
   const [packs, setPacks] = useState<SkillPack[]>(INITIAL_PACKS);
   const [isCloud, setIsCloud] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
+
+  // Innovation Settings: Studio vs Grid view & Sound feedback
+  const [viewMode, setViewMode] = useState<'studio' | 'grid'>('studio');
+  const [soundActive, setSoundActive] = useState<boolean>(true);
 
   // Filters & Search
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>('all');
@@ -52,6 +58,7 @@ export default function HomePage() {
 
   // Initial load
   useEffect(() => {
+    setSoundActive(isSoundEnabled());
     async function loadData() {
       try {
         const { skills: loadedSkills, isCloud: cloudStatus } = await fetchSkills();
@@ -67,6 +74,19 @@ export default function HomePage() {
     }
     loadData();
   }, []);
+
+  const handleToggleSound = () => {
+    const next = !soundActive;
+    setSoundActive(next);
+    setSoundEnabled(next);
+    if (next) playClickSound();
+    toast.success(next ? 'Efectos sonoros táctiles activados' : 'Efectos sonoros silenciados');
+  };
+
+  const handleToggleViewMode = () => {
+    playClickSound();
+    setViewMode((prev) => (prev === 'studio' ? 'grid' : 'studio'));
+  };
 
   // Category Counts
   const categoryCounts = useMemo(() => {
@@ -143,17 +163,24 @@ export default function HomePage() {
     );
   };
 
+  const handleRemoveSkill = (skillId: string) => {
+    playPopSound(false);
+    setSelectedSkillIds((prev) => prev.filter((id) => id !== skillId));
+  };
+
   // Select all currently visible skills
   const handleSelectAllVisible = () => {
     const visibleIds = filteredSkills.map((s) => s.id);
     const allSelected = visibleIds.every((id) => selectedSkillIds.includes(id));
 
     if (allSelected) {
+      playPopSound(false);
       setSelectedSkillIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
     } else {
+      playSuccessSound();
       const newSelected = Array.from(new Set([...selectedSkillIds, ...visibleIds]));
       setSelectedSkillIds(newSelected);
-      toast.success(`${visibleIds.length} skills seleccionadas`);
+      toast.success(`${visibleIds.length} skills agregadas al stack`);
     }
   };
 
@@ -207,13 +234,92 @@ export default function HomePage() {
     }
   };
 
+  // Download helpers
+  const handleDownloadAgentsMd = () => {
+    playSuccessSound();
+    let md = `# Instructions for AI Coding Agents (AGENTS.md)\n\n`;
+    md += `This repository utilizes the following specialized architectural skill stack:\n\n`;
+    md += `<!-- skills:start -->\n`;
+    selectedSkillsObjects.forEach((s, idx) => {
+      md += `### ${idx + 1}. ${s.title} (\`${s.name}\`)\n`;
+      md += `- **Repository:** ${s.repo}\n`;
+      md += `- **Category:** ${s.category}\n`;
+      md += `- **Purpose:** ${s.description}\n`;
+      if (s.allowed_tools && s.allowed_tools.length > 0) {
+        md += `- **Allowed Tools:** ${s.allowed_tools.join(', ')}\n`;
+      }
+      md += `- **Install Command:** \`${s.install_command}\`\n\n`;
+    });
+    md += `<!-- skills:end -->\n\n`;
+    md += `## Guidelines for AI Coding Agents\n`;
+    md += `- Consult the skills above when planning and executing architectural or UI changes.\n`;
+    md += `- Enforce clean design tokens, strict type safety, and verify functionality before finalizing.\n`;
+
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'AGENTS.md';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Archivo AGENTS.md generado y descargado');
+  };
+
+  const handleDownloadPs1 = () => {
+    playSuccessSound();
+    const repoMap = new Map<string, string[]>();
+    selectedSkillsObjects.forEach((s) => {
+      const list = repoMap.get(s.repo) || [];
+      list.push(s.name);
+      repoMap.set(s.repo, list);
+    });
+
+    const lines: string[] = [
+      '# SkillsHub Installer Script for Windows (PowerShell)',
+      'Write-Host "==========================================" -ForegroundColor Cyan',
+      'Write-Host "  Instalando Stack Arquitectonico de IA   " -ForegroundColor Cyan',
+      'Write-Host "==========================================" -ForegroundColor Cyan',
+      '',
+    ];
+    repoMap.forEach((skills, repo) => {
+      lines.push(`Write-Host "-> Conectando con ${repo}..." -ForegroundColor Yellow`);
+      lines.push(`npx skills add ${repo} --skill ${skills.join(' ')} -y`);
+    });
+    lines.push('');
+    lines.push('Write-Host "¡Stack instalado exitosamente!" -ForegroundColor Green');
+
+    const blob = new Blob([lines.join('\r\n')], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'install-stack.ps1';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Script install-stack.ps1 descargado');
+  };
+
   const areAllVisibleSelected =
     filteredSkills.length > 0 &&
     filteredSkills.every((s) => selectedSkillIds.includes(s.id));
 
+  // Dynamic ambient background glow color based on active category
+  const getAmbientGlow = () => {
+    switch (selectedCategory) {
+      case 'security': return 'bg-gradient-to-b from-rose-950/25 via-transparent to-transparent';
+      case 'design': return 'bg-gradient-to-b from-purple-950/25 via-transparent to-transparent';
+      case 'animation': return 'bg-gradient-to-b from-amber-950/25 via-transparent to-transparent';
+      case 'clean-code': return 'bg-gradient-to-b from-emerald-950/25 via-transparent to-transparent';
+      case 'mobile': return 'bg-gradient-to-b from-blue-950/25 via-transparent to-transparent';
+      default: return 'bg-gradient-to-b from-emerald-950/10 via-transparent to-transparent';
+    }
+  };
+
   return (
-    <main className="min-h-screen pb-32">
-      {/* Navbar with Command Palette and Explore trigger */}
+    <main className="min-h-screen relative pb-36">
+      {/* Dynamic Ambient Glow overlay */}
+      <div className={`pointer-events-none fixed inset-0 z-0 h-96 transition-colors duration-700 ${getAmbientGlow()}`} />
+
+      {/* Navbar with ViewMode switcher and Sound controls */}
       <Navbar
         onOpenAddModal={() => setIsAddModalOpen(true)}
         onOpenPacksDrawer={() => setIsPacksDrawerOpen(true)}
@@ -223,62 +329,84 @@ export default function HomePage() {
         onSearchChange={setSearchQuery}
         isCloud={isCloud}
         totalSkillsCount={skills.length}
+        viewMode={viewMode}
+        onToggleViewMode={handleToggleViewMode}
+        soundEnabled={soundActive}
+        onToggleSound={handleToggleSound}
       />
 
       {/* Main Content Area */}
-      <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
+      <div className="relative z-10 mx-auto max-w-7xl px-4 pt-6 sm:px-6">
         {/* Categories Bar */}
         <div className="mb-2">
           <CategoryFilter
             selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
+            onSelectCategory={(cat) => {
+              playClickSound();
+              setSelectedCategory(cat);
+            }}
             categoryCounts={categoryCounts}
           />
         </div>
 
         {/* Tech Environment Filter Bar */}
-        <div className="mb-4 pt-1">
+        <div className="mb-5 pt-1">
           <TechFilter
             selectedTech={selectedTech}
-            onSelectTech={setSelectedTech}
+            onSelectTech={(tech) => {
+              playClickSound();
+              setSelectedTech(tech);
+            }}
           />
         </div>
 
-        {/* Section Header & Bulk Action */}
-        <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-800/60">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-zinc-200">
-              {selectedCategory === 'all' ? 'Todas las Skills' : `Skills de ${selectedCategory}`}
-              {selectedTech !== 'all' && ` • ${selectedTech}`}
-            </h2>
-            <span className="text-xs text-zinc-400">
-              ({filteredSkills.length} encontradas)
-            </span>
+        {/* Section Header & Bulk Action (in Grid mode) */}
+        {viewMode === 'grid' && (
+          <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-800/60">
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-zinc-200">
+                {selectedCategory === 'all' ? 'Todas las Skills' : `Skills de ${selectedCategory}`}
+                {selectedTech !== 'all' && ` • ${selectedTech}`}
+              </h2>
+              <span className="text-xs text-zinc-400">
+                ({filteredSkills.length} encontradas)
+              </span>
+            </div>
+
+            {filteredSkills.length > 0 && (
+              <button
+                onClick={handleSelectAllVisible}
+                className="tap-active flex items-center gap-1.5 self-start sm:self-auto rounded-xl border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors"
+              >
+                {areAllVisibleSelected ? (
+                  <>
+                    <CheckSquare className="h-3.5 w-3.5 text-emerald-400" />
+                    <span>Deseleccionar esta vista</span>
+                  </>
+                ) : (
+                  <>
+                    <Square className="h-3.5 w-3.5 text-zinc-400" />
+                    <span>Seleccionar todas las visibles ({filteredSkills.length})</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
+        )}
 
-          {/* Quick "Select all visible" button */}
-          {filteredSkills.length > 0 && (
-            <button
-              onClick={handleSelectAllVisible}
-              className="tap-active flex items-center gap-1.5 self-start sm:self-auto rounded-lg border border-zinc-800 bg-zinc-900/60 px-2.5 py-1 text-xs text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors"
-            >
-              {areAllVisibleSelected ? (
-                <>
-                  <CheckSquare className="h-3.5 w-3.5 text-emerald-400" />
-                  <span>Deseleccionar esta vista</span>
-                </>
-              ) : (
-                <>
-                  <Square className="h-3.5 w-3.5 text-zinc-400" />
-                  <span>Seleccionar todas las visibles ({filteredSkills.length})</span>
-                </>
-              )}
-            </button>
-          )}
-        </div>
-
-        {/* Skills Grid */}
-        {filteredSkills.length === 0 ? (
+        {/* Studio View vs Grid View */}
+        {viewMode === 'studio' ? (
+          <ArchitectureStudio
+            skills={filteredSkills}
+            selectedSkills={selectedSkillsObjects}
+            onToggleSelect={handleToggleSelect}
+            onViewDetails={setDetailSkill}
+            onClearSelection={() => {
+              playPopSound(false);
+              setSelectedSkillIds([]);
+            }}
+          />
+        ) : filteredSkills.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-800 py-16 text-center">
             <Layers className="h-10 w-10 text-zinc-600 mb-3" />
             <h3 className="text-sm font-medium text-zinc-300">No se encontraron skills</h3>
@@ -290,13 +418,13 @@ export default function HomePage() {
             <div className="flex gap-2 mt-4">
               <button
                 onClick={() => setIsExploreModalOpen(true)}
-                className="tap-active rounded-lg border border-zinc-700 bg-zinc-800 px-3.5 py-1.5 text-xs font-semibold text-zinc-200 hover:text-white"
+                className="tap-active rounded-xl border border-zinc-700 bg-zinc-800 px-3.5 py-1.5 text-xs font-semibold text-zinc-200 hover:text-white"
               >
                 Explorar catálogo popular
               </button>
               <button
                 onClick={() => setIsAddModalOpen(true)}
-                className="tap-active rounded-lg bg-emerald-500 px-3.5 py-1.5 text-xs font-semibold text-zinc-950 hover:bg-emerald-400"
+                className="tap-active rounded-xl bg-emerald-500 px-3.5 py-1.5 text-xs font-semibold text-zinc-950 hover:bg-emerald-400"
               >
                 Registrar nueva skill
               </button>
@@ -317,12 +445,18 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* Sticky Multi-Select Command Generator Bar */}
-      <MultiSelectBar
+      {/* Floating Tactile Dock with Spring Physics (Raycast / macOS style) */}
+      <FloatingDock
         selectedSkills={selectedSkillsObjects}
-        onClearSelection={() => setSelectedSkillIds([])}
+        onRemoveSkill={handleRemoveSkill}
+        onClearSelection={() => {
+          playPopSound(false);
+          setSelectedSkillIds([]);
+        }}
         onSaveAsPack={() => setIsPacksDrawerOpen(true)}
         onCompare={() => setIsCompareModalOpen(true)}
+        onDownloadAgentsMd={handleDownloadAgentsMd}
+        onDownloadPs1={handleDownloadPs1}
       />
 
       {/* Add Skill Modal (GitHub Scraping, WhatsApp text paste & Lockfile import) */}

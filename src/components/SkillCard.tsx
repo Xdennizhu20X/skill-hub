@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Skill } from '@/types/skills';
 import { Copy, Check, ExternalLink, Terminal, Tag, MessageSquareQuote, StickyNote } from 'lucide-react';
+import { playClickSound, playPopSound, playSuccessSound } from '@/lib/sound';
 import { toast } from 'sonner';
 
 interface SkillCardProps {
@@ -65,11 +66,14 @@ ${skill.raw_content ? `\n## Reglas e instrucciones detalladas:\n${skill.raw_cont
 
   return (
     <div
-      onClick={() => onToggleSelect(skill.id)}
-      className={`group relative flex flex-col justify-between rounded-xl border bg-zinc-900/40 p-4 transition-all cursor-pointer ${
+      onClick={() => {
+        playPopSound(!isSelected);
+        onToggleSelect(skill.id);
+      }}
+      className={`group relative flex flex-col justify-between rounded-2xl p-4 transition-all duration-150 cursor-pointer ${
         isSelected
-          ? 'border-emerald-500/80 bg-zinc-900/90 ring-1 ring-emerald-500/30'
-          : 'border-zinc-800/80 hover:border-zinc-700 hover:bg-zinc-900/60'
+          ? 'specular-border-active bg-zinc-900/90'
+          : 'specular-border bg-[#111114]/90 hover:bg-[#15151a] hover:border-zinc-700/80 hover:-translate-y-0.5'
       }`}
     >
       <div>
