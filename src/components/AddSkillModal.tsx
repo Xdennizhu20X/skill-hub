@@ -1,7 +1,22 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Search, Sparkles, Check, ExternalLink, Loader2, ArrowRight, FileJson, MessageSquare, Upload } from 'lucide-react';
+import { 
+  X, 
+  Search, 
+  Sparkles, 
+  Check, 
+  ExternalLink, 
+  Loader2, 
+  ArrowRight, 
+  FileJson, 
+  MessageSquare, 
+  Upload,
+  AlertTriangle,
+  ShieldAlert,
+  CheckCircle2,
+  Zap
+} from 'lucide-react';
 import { ScrapedRepoResult, ScrapedSkillItem, Skill, CategoryType } from '@/types/skills';
 import { GithubIcon } from '@/components/icons/GithubIcon';
 import { toast } from 'sonner';
@@ -10,6 +25,18 @@ interface AddSkillModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddSkills: (skills: Omit<Skill, 'id' | 'created_at'>[]) => void;
+}
+
+function guessLockfileCategory(skillName: string, repo: string): CategoryType {
+  const combined = `${skillName} ${repo}`.toLowerCase();
+  if (/\b(security|audit|vulnerability|pen-test|auth|cve)\b/.test(combined)) return 'security';
+  if (/\b(anti-slop|antislop|code-hygiene|clean-code|linter)\b/.test(combined)) return 'clean-code';
+  if (/\b(animate|animation|spring|motion|choreograph)\b/.test(combined)) return 'animation';
+  if (/\b(apple-design|design|ui|ux|polish)\b/.test(combined)) return 'design';
+  if (/\b(mobile|native|expo|react-native|gestures)\b/.test(combined)) return 'mobile';
+  if (/\b(testing|break-ui|qa|stress)\b/.test(combined)) return 'testing';
+  if (/\b(sonner|toast|react|frontend)\b/.test(combined)) return 'frontend';
+  return 'other';
 }
 
 export function AddSkillModal({
@@ -23,6 +50,129 @@ export function AddSkillModal({
   const [scrapedResult, setScrapedResult] = useState<ScrapedRepoResult | null>(null);
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [lockfileJson, setLockfileJson] = useState('');
+
+  // Lockfile Audit analysis
+  const lockfileAudit = React.useMemo(() => {
+    if (!lockfileJson.trim()) return null;
+    try {
+      const parsed = JSON.parse(lockfileJson.trim());
+      const skillsObj = parsed.skills || parsed;
+      if (typeof skillsObj !== 'object' || skillsObj === null) return null;
+
+      const entries = Object.entries(skillsObj);
+      if (entries.length === 0) return null;
+
+      const counts = {
+        security: 0,
+        cleanCode: 0,
+        designMotion: 0,
+        mobile: 0,
+        other: 0,
+      };
+
+      const parsedSkills: Array<{ name: string; repo: string; category: CategoryType }> = [];
+
+      entries.forEach(([name, data]: [string, any]) => {
+        const repo = data?.source || 'unknown/repo';
+        const cat = guessLockfileCategory(name, repo);
+        parsedSkills.push({ name, repo, category: cat });
+
+        if (cat === 'security') counts.security++;
+        else if (cat === 'clean-code') counts.cleanCode++;
+        else if (cat === 'design' || cat === 'animation') counts.designMotion++;
+        else if (cat === 'mobile') counts.mobile++;
+        else counts.other++;
+      });
+
+      const gaps: Array<{
+        title: string;
+        description: string;
+        recommended: Omit<Skill, 'id' | 'created_at'>;
+      }> = [];
+
+      if (counts.security === 0) {
+        gaps.push({
+          title: 'Sin blindaje de Seguridad / Auditoría',
+          description: 'No hay skills para revisar vulnerabilidades, tokens ni endpoints.',
+          recommended: {
+            name: 'security-audit',
+            title: 'Security Audit & Vulnerabilities',
+            repo: 'cloudflare/security-audit-skill',
+            repo_url: 'https://github.com/cloudflare/security-audit-skill',
+            description: 'Revisión exhaustiva de vulnerabilidades y seguridad para código y APIs.',
+            category: 'security',
+            tags: ['security', 'audit', 'cloudflare'],
+            author: 'cloudflare',
+            install_command: 'npx skills add cloudflare/security-audit-skill',
+            is_favorite: true,
+          },
+        });
+      }
+
+      if (counts.cleanCode === 0) {
+        gaps.push({
+          title: 'Sin filtros Anti-Slop ni calidad',
+          description: 'Riesgo de código con comentarios redundantes y estilos genéricos de IA.',
+          recommended: {
+            name: 'antislop',
+            title: 'Anti-Slop Core Filter',
+            repo: 'miqdadbadjuber/anti-slop',
+            repo_url: 'https://github.com/miqdadbadjuber/anti-slop',
+            skill_path: 'skills/antislop/SKILL.md',
+            description: 'Filtro esencial contra UI genérica de IA y degradados cliché.',
+            category: 'clean-code',
+            tags: ['anti-slop', 'craft'],
+            author: 'miqdadbadjuber',
+            install_command: 'npx skills add miqdadbadjuber/anti-slop --skill antislop',
+            is_favorite: true,
+          },
+        });
+      }
+
+      if (counts.mobile === 0) {
+        gaps.push({
+          title: 'Sin optimización Mobile / Touch',
+          description: 'Posible hover pegajoso, autozoom en inputs y problemas con 100dvh.',
+          recommended: {
+            name: 'mobile-native',
+            title: 'Mobile Native Web Polish',
+            repo: 'emilkowalski/skills',
+            repo_url: 'https://github.com/emilkowalski/skills',
+            skill_path: 'skills/mobile-native/SKILL.md',
+            description: 'Ajustes CSS y meta-tags para que una web app se sienta nativa.',
+            category: 'mobile',
+            tags: ['mobile', 'responsive'],
+            author: 'emilkowalski',
+            install_command: 'npx skills add emilkowalski/skills --skill mobile-native',
+            is_favorite: true,
+          },
+        });
+      }
+
+      return {
+        total: entries.length,
+        counts,
+        parsedSkills,
+        gaps,
+      };
+    } catch {
+      return null;
+    }
+  }, [lockfileJson]);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (content) {
+        setLockfileJson(content);
+        toast.success(`Archivo "${file.name}" cargado`);
+      }
+    };
+    reader.readAsText(file);
+  };
 
   if (!isOpen) return null;
 
@@ -92,7 +242,7 @@ export function AddSkillModal({
     handleClose();
   };
 
-  const handleImportLockfile = () => {
+  const handleImportLockfile = (withRecommendations = false) => {
     try {
       const parsed = JSON.parse(lockfileJson.trim());
       const skillsObj = parsed.skills || parsed;
@@ -105,6 +255,8 @@ export function AddSkillModal({
           .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
           .join(' ');
 
+        const cat = guessLockfileCategory(skillName, repo);
+
         imported.push({
           name: skillName,
           title: formattedTitle,
@@ -112,8 +264,8 @@ export function AddSkillModal({
           repo_url: `https://github.com/${repo}`,
           skill_path: data.skillPath,
           description: `Skill importada desde skills-lock.json (${skillName})`,
-          category: 'other',
-          tags: [skillName, 'lockfile'],
+          category: cat,
+          tags: [skillName, cat, 'lockfile'],
           author: repo.split('/')[0] || 'community',
           install_command: `npx skills add ${repo} --skill ${skillName}`,
           is_favorite: false,
@@ -125,8 +277,22 @@ export function AddSkillModal({
         return;
       }
 
+      // If user wants to close gaps as well, append recommended gap skills
+      if (withRecommendations && lockfileAudit && lockfileAudit.gaps.length > 0) {
+        lockfileAudit.gaps.forEach((gap) => {
+          // Avoid duplicates
+          if (!imported.some((s) => s.name === gap.recommended.name)) {
+            imported.push(gap.recommended);
+          }
+        });
+      }
+
       onAddSkills(imported);
-      toast.success(`${imported.length} skills importadas desde tu lockfile`);
+      toast.success(
+        withRecommendations
+          ? `${imported.length} skills importadas (incluyendo recomendaciones para cerrar brechas)`
+          : `${imported.length} skills importadas desde tu lockfile`
+      );
       handleClose();
     } catch {
       toast.error('El formato JSON no es válido. Asegúrate de pegar el contenido completo de skills-lock.json');
@@ -382,33 +548,121 @@ export function AddSkillModal({
 
         {/* Mode: Lockfile Import */}
         {activeMode === 'lockfile' && (
-          <div className="space-y-3 mt-1">
-            <p className="text-xs text-zinc-400">
-              Pega el contenido de tu archivo <code className="text-emerald-400 font-mono">skills-lock.json</code> para importar de golpe todas las skills instaladas en tus proyectos:
-            </p>
+          <div className="space-y-3 mt-1 flex-1 overflow-y-auto pr-1">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-zinc-400">
+                Pega el contenido o sube tu <code className="text-emerald-400 font-mono">skills-lock.json</code> para auditar tu cobertura arquitectónica:
+              </p>
+              <label className="tap-active cursor-pointer inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/80 px-2.5 py-1 text-xs text-zinc-200 hover:text-white hover:bg-zinc-700">
+                <Upload className="h-3.5 w-3.5 text-emerald-400" />
+                <span>Subir archivo .json</span>
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
 
             <textarea
               value={lockfileJson}
               onChange={(e) => setLockfileJson(e.target.value)}
               placeholder={`{\n  "version": 2,\n  "skills": {\n    "animate": {\n      "source": "emilkowalski/skills"\n    }\n  }\n}`}
-              className="w-full h-56 rounded-xl border border-zinc-700 bg-zinc-950 p-3 font-mono text-xs text-zinc-200 placeholder:text-zinc-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
+              className="w-full h-32 rounded-xl border border-zinc-700 bg-zinc-950 p-3 font-mono text-xs text-zinc-200 placeholder:text-zinc-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
             />
 
-            <div className="flex justify-end gap-2 pt-2">
+            {/* Reverse Audit Analysis Section */}
+            {lockfileAudit && (
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3.5 space-y-3 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                    <span className="text-xs font-semibold text-white">
+                      Auditoría Inversa: {lockfileAudit.total} skills detectadas
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-mono text-zinc-400">
+                    Cobertura: {4 - lockfileAudit.gaps.length}/4 Dimensiones
+                  </span>
+                </div>
+
+                {/* Coverage Chips */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className={`p-2 rounded-lg border text-center ${lockfileAudit.counts.security > 0 ? 'bg-rose-950/20 border-rose-800/40 text-rose-300' : 'bg-zinc-900 border-zinc-800 text-zinc-500'}`}>
+                    <span className="block text-[11px] font-medium">Seguridad</span>
+                    <span className="text-sm font-semibold">{lockfileAudit.counts.security}</span>
+                  </div>
+                  <div className={`p-2 rounded-lg border text-center ${lockfileAudit.counts.cleanCode > 0 ? 'bg-emerald-950/20 border-emerald-800/40 text-emerald-300' : 'bg-zinc-900 border-zinc-800 text-zinc-500'}`}>
+                    <span className="block text-[11px] font-medium">Anti-Slop</span>
+                    <span className="text-sm font-semibold">{lockfileAudit.counts.cleanCode}</span>
+                  </div>
+                  <div className={`p-2 rounded-lg border text-center ${lockfileAudit.counts.designMotion > 0 ? 'bg-purple-950/20 border-purple-800/40 text-purple-300' : 'bg-zinc-900 border-zinc-800 text-zinc-500'}`}>
+                    <span className="block text-[11px] font-medium">UI & Motion</span>
+                    <span className="text-sm font-semibold">{lockfileAudit.counts.designMotion}</span>
+                  </div>
+                  <div className={`p-2 rounded-lg border text-center ${lockfileAudit.counts.mobile > 0 ? 'bg-blue-950/20 border-blue-800/40 text-blue-300' : 'bg-zinc-900 border-zinc-800 text-zinc-500'}`}>
+                    <span className="block text-[11px] font-medium">Mobile</span>
+                    <span className="text-sm font-semibold">{lockfileAudit.counts.mobile}</span>
+                  </div>
+                </div>
+
+                {/* Gaps Alert */}
+                {lockfileAudit.gaps.length > 0 ? (
+                  <div className="space-y-2 pt-1">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      <span>Brechas Detectadas ({lockfileAudit.gaps.length})</span>
+                    </h4>
+                    {lockfileAudit.gaps.map((gap, i) => (
+                      <div
+                        key={i}
+                        className="rounded-lg border border-amber-500/20 bg-amber-950/10 p-2.5 flex items-start justify-between gap-2 text-xs"
+                      >
+                        <div>
+                          <p className="font-semibold text-amber-200">{gap.title}</p>
+                          <p className="text-zinc-400 text-[11px] mt-0.5">{gap.description}</p>
+                          <p className="text-emerald-400 text-[11px] font-mono mt-1">
+                            Recomendado: {gap.recommended.title} ({gap.recommended.name})
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-emerald-500/30 bg-emerald-950/20 p-2.5 text-xs text-emerald-300 flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                    <span>¡Excelente! Tu stack cubre todas las capas esenciales de arquitectura.</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-zinc-800">
               <button
                 type="button"
                 onClick={handleClose}
-                className="rounded-lg px-3 py-1.5 text-xs text-zinc-400 hover:text-white"
+                className="tap-active rounded-lg px-3 py-1.5 text-xs text-zinc-400 hover:text-white"
               >
                 Cancelar
               </button>
+              {lockfileAudit && lockfileAudit.gaps.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => handleImportLockfile(true)}
+                  className="tap-active flex items-center gap-1.5 rounded-lg border border-amber-500/50 bg-amber-950/30 hover:bg-amber-900/40 px-3 py-1.5 text-xs font-semibold text-amber-200"
+                >
+                  <Zap className="h-3.5 w-3.5 text-amber-400" />
+                  <span>Importar + Cerrar Brechas (+{lockfileAudit.gaps.length})</span>
+                </button>
+              )}
               <button
                 type="button"
-                onClick={handleImportLockfile}
+                onClick={() => handleImportLockfile(false)}
                 disabled={!lockfileJson.trim()}
                 className="tap-active rounded-lg bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-zinc-950 hover:bg-emerald-400 disabled:opacity-50"
               >
-                Importar Skills desde JSON
+                Importar {lockfileAudit?.total ? `${lockfileAudit.total} Skills` : 'desde JSON'}
               </button>
             </div>
           </div>

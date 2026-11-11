@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Skill, CategoryType } from '@/types/skills';
+import { Skill, CategoryType, SkillPack } from '@/types/skills';
 import { LiveTerminal } from './LiveTerminal';
 import { SkillCard } from './SkillCard';
 import { 
@@ -24,17 +24,21 @@ import { toast } from 'sonner';
 interface ArchitectureStudioProps {
   skills: Skill[];
   selectedSkills: Skill[];
+  packs?: SkillPack[];
   onToggleSelect: (skillId: string) => void;
   onViewDetails: (skill: Skill) => void;
   onClearSelection: () => void;
+  onSelectSkills?: (skillIds: string[]) => void;
 }
 
 export function ArchitectureStudio({
   skills,
   selectedSkills,
+  packs = [],
   onToggleSelect,
   onViewDetails,
   onClearSelection,
+  onSelectSkills,
 }: ArchitectureStudioProps) {
   // Group selected skills into architectural layers
   const securityLayer = selectedSkills.filter(s => s.category === 'security');
@@ -108,7 +112,68 @@ export function ArchitectureStudio({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <div className="space-y-6">
+      {/* 1-Click Project Blueprints */}
+      {packs.length > 0 && (
+        <div className="rounded-2xl specular-border bg-[#0d0d10] p-4.5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-amber-400" />
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-200">
+                Packs por Tipo de Proyecto (1-Click Blueprints)
+              </h3>
+            </div>
+            <span className="text-[11px] text-zinc-500 hidden sm:inline">
+              Selecciona una arquitectura completa para tu framework en 1 clic
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {packs.slice(0, 4).map((pack) => {
+              const isFullyActive = pack.skill_ids.every((id) =>
+                selectedSkills.some((s) => s.id === id)
+              );
+              return (
+                <button
+                  key={pack.id}
+                  type="button"
+                  onClick={() => {
+                    if (onSelectSkills) {
+                      playSuccessSound();
+                      onSelectSkills(pack.skill_ids);
+                      toast.success(`Stack "${pack.title}" activado (${pack.skill_ids.length} skills)`);
+                    }
+                  }}
+                  className={`tap-active text-left p-3 rounded-xl border transition-all ${
+                    isFullyActive
+                      ? 'border-emerald-500/80 bg-emerald-950/20 ring-1 ring-emerald-500/30'
+                      : 'border-zinc-800 bg-zinc-900/40 hover:border-zinc-700 hover:bg-zinc-900/80'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-base">{pack.icon || '📦'}</span>
+                    <span
+                      className={`text-[10px] font-mono px-1.5 py-0.5 rounded-full ${
+                        isFullyActive
+                          ? 'bg-emerald-500 text-zinc-950 font-semibold'
+                          : 'bg-zinc-800 text-zinc-400'
+                      }`}
+                    >
+                      {isFullyActive ? '✓ ACTIVO' : `${pack.skill_ids.length} skills`}
+                    </span>
+                  </div>
+                  <h4 className="text-xs font-medium text-zinc-200 line-clamp-1">{pack.title}</h4>
+                  <p className="text-[11px] text-zinc-400 line-clamp-2 mt-1 leading-snug">
+                    {pack.description}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
       {/* Left Column (Catalog Explorer) - 7 cols */}
       <div className="lg:col-span-7 space-y-4">
         <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
@@ -285,5 +350,6 @@ export function ArchitectureStudio({
         </div>
       </div>
     </div>
+  </div>
   );
 }

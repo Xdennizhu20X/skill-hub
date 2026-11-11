@@ -44,6 +44,8 @@ export interface Skill {
   technologies?: string[];
   allowed_tools?: string[];
   compatible_agents?: string[];
+  triggers?: string[];
+  key_rules?: string[];
   author: string;
   install_command: string;
   raw_content?: string;
@@ -80,6 +82,8 @@ export interface ScrapedSkillItem {
   tags: string[];
   technologies?: string[];
   allowed_tools?: string[];
+  triggers?: string[];
+  key_rules?: string[];
   skill_path?: string;
   install_command: string;
 }

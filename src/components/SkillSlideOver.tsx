@@ -13,7 +13,10 @@ import {
   Bot, 
   Tag, 
   Layers, 
-  Code2 
+  Code2,
+  Zap,
+  ShieldAlert,
+  Target
 } from 'lucide-react';
 import { GithubIcon } from '@/components/icons/GithubIcon';
 import { toast } from 'sonner';
@@ -193,6 +196,57 @@ export function SkillSlideOver({
                   </p>
                 </div>
 
+                {/* Triggers (When to Use) */}
+                {skill.triggers && skill.triggers.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-amber-400 mb-2 flex items-center gap-1.5">
+                      <Target className="h-3.5 w-3.5 text-amber-400" />
+                      <span>Disparadores (Cuándo Usar)</span>
+                    </h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {skill.triggers.map((trigger, i) => (
+                        <span
+                          key={i}
+                          className="rounded-lg bg-amber-950/20 border border-amber-500/30 px-2.5 py-1 text-[11px] text-amber-200 flex items-center gap-1.5"
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
+                          <span>{trigger}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Key Rules & Guardrails */}
+                {skill.key_rules && skill.key_rules.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-rose-400 mb-2 flex items-center gap-1.5">
+                      <Zap className="h-3.5 w-3.5 text-rose-400" />
+                      <span>Reglas Clave & Guardrails</span>
+                    </h4>
+                    <div className="space-y-1.5">
+                      {skill.key_rules.map((rule, i) => {
+                        const isForbidden = rule.toUpperCase().includes('FORBIDDEN') || rule.toUpperCase().includes('NEVER') || rule.toUpperCase().includes('PROHIBIDO');
+                        return (
+                          <div
+                            key={i}
+                            className={`rounded-lg p-2 text-xs flex items-start gap-2 border ${
+                              isForbidden
+                                ? 'bg-rose-950/20 border-rose-800/40 text-rose-200'
+                                : 'bg-emerald-950/20 border-emerald-800/40 text-emerald-200'
+                            }`}
+                          >
+                            <span className="font-mono font-semibold text-[11px] shrink-0 mt-0.5">
+                              {isForbidden ? '⛔' : '✓'}
+                            </span>
+                            <span className="leading-snug">{rule}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Allowed Tools */}
                 {skill.allowed_tools && skill.allowed_tools.length > 0 && (
                   <div>
@@ -262,17 +316,22 @@ export function SkillSlideOver({
                         <span className="font-medium text-amber-300">Prompt Directo (Sin Instalar)</span>
                         <button
                           onClick={() => {
-                            const promptText = `Por favor aplica las siguientes directrices y reglas de craft para esta tarea:
-
-# Skill: ${skill.title} (${skill.name})
-Repositorio: ${skill.repo}
-Categoría: ${skill.category}
-
-## Propósito:
-${skill.description}
-${skill.raw_content ? `\n## Reglas e instrucciones detalladas:\n${skill.raw_content.slice(0, 2000)}` : ''}`;
+                            let promptText = `Por favor aplica las siguientes directrices y reglas de craft para esta tarea:\n\n`;
+                            promptText += `# Skill: ${skill.title} (${skill.name})\n`;
+                            promptText += `Repositorio: ${skill.repo}\n`;
+                            promptText += `Categoría: ${skill.category}\n\n`;
+                            promptText += `## Propósito:\n${skill.description}\n\n`;
+                            if (skill.triggers && skill.triggers.length > 0) {
+                              promptText += `## Cuándo se activa (Triggers):\n${skill.triggers.map(t => `- ${t}`).join('\n')}\n\n`;
+                            }
+                            if (skill.key_rules && skill.key_rules.length > 0) {
+                              promptText += `## Reglas obligatorias y restricciones:\n${skill.key_rules.map(r => `- ${r}`).join('\n')}\n\n`;
+                            }
+                            if (skill.raw_content) {
+                              promptText += `## Instrucciones detalladas:\n${skill.raw_content.slice(0, 1500)}`;
+                            }
                             navigator.clipboard.writeText(promptText);
-                            toast.success('Prompt copiado para usar en ChatGPT / Claude Web / Cursor');
+                            toast.success('Prompt enriquecido copiado para chats de IA');
                           }}
                           className="tap-active text-amber-400 hover:text-amber-300 flex items-center gap-1"
                         >

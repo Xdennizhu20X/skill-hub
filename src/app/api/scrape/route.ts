@@ -77,6 +77,75 @@ function parseAllowedTools(rawContent: string): string[] {
     .filter(Boolean);
 }
 
+function parseTriggers(rawContent: string): string[] {
+  const triggers: string[] = [];
+
+  // 1. Look for explicit triggers line or section: "triggers on:", "use when:", "when to use:"
+  const triggerPatterns = [
+    /triggers\s+on\s*[:—–-]\s*([^\n\r]+)/i,
+    /use\s+when\s*[:—–-]\s*([^\n\r]+)/i,
+    /when\s+to\s+use\s*[:—–-]\s*([^\n\r]+)/i,
+    /cuándo\s+usar\s*[:—–-]\s*([^\n\r]+)/i,
+  ];
+
+  for (const pattern of triggerPatterns) {
+    const match = rawContent.match(pattern);
+    if (match && match[1]) {
+      const parts = match[1]
+        .split(/[,;•|]+/)
+        .map(t => t.trim().replace(/^["'`]|["'`]$/g, ''))
+        .filter(t => t.length > 2 && t.length < 80);
+      triggers.push(...parts);
+    }
+  }
+
+  // 2. Look for bullet points under headings like ## Triggers, ## When to use
+  const sectionMatch = rawContent.match(/##\s*(?:Triggers|When to use|Cuándo usar|Use Cases|Casos de uso)[\s\S]*?(?=\n##|$)/i);
+  if (sectionMatch) {
+    const lines = sectionMatch[0].split('\n');
+    for (const line of lines) {
+      const bulletMatch = line.match(/^\s*[-*+]\s+(.+)/);
+      if (bulletMatch && bulletMatch[1]) {
+        const cleaned = bulletMatch[1].replace(/[*_`]/g, '').trim();
+        if (cleaned.length > 3 && cleaned.length < 90 && !triggers.includes(cleaned)) {
+          triggers.push(cleaned);
+        }
+      }
+    }
+  }
+
+  return Array.from(new Set(triggers)).slice(0, 6);
+}
+
+function parseKeyRules(rawContent: string): string[] {
+  const rules: string[] = [];
+  const lines = rawContent.split('\n');
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    // Match lines starting with NEVER, ALWAYS, FORBIDDEN, REQUIRED, MUST, PROHIBIDO, SIEMPRE
+    const ruleMatch = trimmed.match(/^[-*+]?\s*(?:\*\*)?(NEVER|ALWAYS|FORBIDDEN|REQUIRED|MUST|PROHIBIDO|SIEMPRE|OBLIGATORIO)[:\s\*\-]+([^\n\r]+)/i);
+    if (ruleMatch && ruleMatch[2]) {
+      const type = ruleMatch[1].toUpperCase();
+      const content = ruleMatch[2].replace(/[*_`#]/g, '').trim();
+      if (content.length > 5 && content.length < 120) {
+        rules.push(`${type}: ${content}`);
+      }
+    } else {
+      // Check for numbered rules like R-01, R-02 or Rule 1
+      const rMatch = trimmed.match(/^[-*#\s]*(?:R-\d+|Rule\s+\d+|Regla\s+\d+)[:\s—–-]+([^\n\r]+)/i);
+      if (rMatch && rMatch[1]) {
+        const cleaned = rMatch[1].replace(/[*_`]/g, '').trim();
+        if (cleaned.length > 5 && cleaned.length < 120) {
+          rules.push(cleaned);
+        }
+      }
+    }
+  }
+
+  return Array.from(new Set(rules)).slice(0, 6);
+}
+
 function guessCategory(text: string, topics: string[] = []): CategoryType {
   const combined = (text + ' ' + topics.join(' ')).toLowerCase();
 
@@ -220,6 +289,9 @@ export async function POST(req: NextRequest) {
 
           let skillDesc = repoDescription;
           let allowedTools: string[] = [];
+          let triggers: string[] = [];
+          let keyRules: string[] = [];
+
           try {
             const rawSkillRes = await fetch(
               `https://raw.githubusercontent.com/${owner}/${repo}/${defaultBranch}/${file.path}`
@@ -227,6 +299,8 @@ export async function POST(req: NextRequest) {
             if (rawSkillRes.ok) {
               const rawText = await rawSkillRes.text();
               allowedTools = parseAllowedTools(rawText);
+              triggers = parseTriggers(rawText);
+              keyRules = parseKeyRules(rawText);
 
               const descMatch = rawText.match(/description:\s*["']?([^"'\n\r]+)["']?/i);
               if (descMatch && descMatch[1]) {
@@ -257,6 +331,8 @@ export async function POST(req: NextRequest) {
             tags: [skillName, cat, owner],
             technologies: techs,
             allowed_tools: allowedTools,
+            triggers: triggers.length > 0 ? triggers : undefined,
+            key_rules: keyRules.length > 0 ? keyRules : undefined,
             skill_path: file.path,
             install_command: `npx skills add ${owner}/${repo} --skill ${skillName}`,
           });
@@ -271,6 +347,8 @@ export async function POST(req: NextRequest) {
       const cat = guessCategory(repo + ' ' + repoDescription, topics);
       const techs = detectTechnologies(repo + ' ' + repoDescription, topics);
       const allowedTools = parseAllowedTools(readmeText);
+      const triggers = parseTriggers(readmeText);
+      const keyRules = parseKeyRules(readmeText);
       const formattedTitle = repo
         .split(/[-_]/)
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -284,6 +362,8 @@ export async function POST(req: NextRequest) {
         tags: [...topics.slice(0, 4), cat, owner].filter(Boolean),
         technologies: techs,
         allowed_tools: allowedTools,
+        triggers: triggers.length > 0 ? triggers : undefined,
+        key_rules: keyRules.length > 0 ? keyRules : undefined,
         install_command: `npx skills add ${owner}/${repo}`,
       });
     }

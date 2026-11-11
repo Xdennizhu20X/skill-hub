@@ -399,11 +399,16 @@ export default function HomePage() {
           <ArchitectureStudio
             skills={filteredSkills}
             selectedSkills={selectedSkillsObjects}
+            packs={packs}
             onToggleSelect={handleToggleSelect}
             onViewDetails={setDetailSkill}
             onClearSelection={() => {
               playPopSound(false);
               setSelectedSkillIds([]);
+            }}
+            onSelectSkills={(ids) => {
+              playSuccessSound();
+              setSelectedSkillIds(ids);
             }}
           />
         ) : filteredSkills.length === 0 ? (

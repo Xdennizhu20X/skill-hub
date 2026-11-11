@@ -26,6 +26,18 @@ export const INITIAL_SKILLS: Skill[] = [
     category: 'security',
     tags: ['security', 'audit', 'vulnerability', 'cloudflare', 'pen-test'],
     author: 'cloudflare',
+    triggers: [
+      'auditoría de seguridad en endpoints y APIs',
+      'revisión de vulnerabilidades y CVEs',
+      'validación de tokens JWT y autenticación',
+      'inspección antes de desplegar a producción'
+    ],
+    key_rules: [
+      'REQUIRED: Validar saneamiento estricto en inputs de usuario',
+      'NEVER: Exponer claves secretas o variables de entorno al cliente',
+      'REQUIRED: Implementar headers de seguridad HTTP y control CORS',
+      'FORBIDDEN: Confiar en validaciones exclusivas de frontend'
+    ],
     install_command: 'npx skills add cloudflare/security-audit-skill',
     is_favorite: true,
     created_at: '2026-11-11T11:00:00Z',
@@ -42,6 +54,18 @@ export const INITIAL_SKILLS: Skill[] = [
     category: 'animation',
     tags: ['animation', 'motion', 'transitions', 'springs'],
     author: 'emilkowalski',
+    triggers: [
+      'animar un componente o modal',
+      'añadir transiciones suaves de entrada y salida',
+      'hacer que una interfaz se sienta viva y fluida',
+      'arreglar movimiento que se siente mecánico o rígido'
+    ],
+    key_rules: [
+      'REQUIRED: Usar curvas físicas tipo resorte antes que lineales',
+      'REQUIRED: Animar únicamente propiedades transform y opacity',
+      'ALWAYS: Las animaciones deben ser 100% interrumpibles',
+      'REQUIRED: Respetar la preferencia prefers-reduced-motion'
+    ],
     install_command: 'npx skills add emilkowalski/skills --skill animate',
     is_favorite: true,
     created_at: '2026-11-11T10:00:00Z',
@@ -57,6 +81,18 @@ export const INITIAL_SKILLS: Skill[] = [
     category: 'design',
     tags: ['apple', 'design-engineering', 'gestures', 'haptics'],
     author: 'emilkowalski',
+    triggers: [
+      'diseñar interfaces con estética Apple / iOS',
+      'materiales translúcidos con desenfoque de fondo',
+      'tipografía con espaciado y tracking óptico',
+      'interacciones basadas en física y momentum'
+    ],
+    key_rules: [
+      'ALWAYS: Mantener continuidad física sin saltos de fotogramas',
+      'REQUIRED: Feedback háptico sutil y no invasivo',
+      'FORBIDDEN: Decoraciones excesivas sin propósito funcional',
+      'REQUIRED: Paleta monocromática refinada con acento intencional'
+    ],
     install_command: 'npx skills add emilkowalski/skills --skill apple-design',
     is_favorite: true,
     created_at: '2026-11-11T10:00:00Z',
@@ -72,6 +108,18 @@ export const INITIAL_SKILLS: Skill[] = [
     category: 'design',
     tags: ['design-system', 'ui-polish', 'taste', 'craft'],
     author: 'emilkowalski',
+    triggers: [
+      'pulir interfaces a nivel de diseño de ingeniería',
+      'afinar estados hover, active y focus',
+      'mejorar la sensación táctil y micro-detalles',
+      'elevar el estándar visual de componentes'
+    ],
+    key_rules: [
+      'REQUIRED: Respuesta visual inmediata (<100ms) al presionar',
+      'REQUIRED: Estados hover, active y focus siempre definidos',
+      'ALWAYS: Prevenir desplazamientos de layout involuntarios',
+      'REQUIRED: Los detalles invisibles deben sentirse aunque no se noten a simple vista'
+    ],
     install_command: 'npx skills add emilkowalski/skills --skill emil-design-eng',
     is_favorite: true,
     created_at: '2026-11-11T10:00:00Z',
@@ -87,6 +135,18 @@ export const INITIAL_SKILLS: Skill[] = [
     category: 'animation',
     tags: ['gestures', 'drag', 'sheets', 'vaul', 'touch'],
     author: 'emilkowalski',
+    triggers: [
+      'bottom sheets y drawers interactivos',
+      'deslizar para descartar (swipe-to-dismiss)',
+      'arrastrar elementos con inercia física (drag-to-reorder)',
+      'interacción táctil que no sigue el dedo correctamente'
+    ],
+    key_rules: [
+      'REQUIRED: El elemento debe seguir el cursor o dedo 1:1',
+      'ALWAYS: Permitir atrapar el elemento a mitad de su animación',
+      'REQUIRED: Inercia con desaceleración natural al soltar',
+      'REQUIRED: touch-action: none o manipulation configurado correctamente'
+    ],
     install_command: 'npx skills add emilkowalski/skills --skill gestures',
     created_at: '2026-11-11T10:00:00Z',
   },
@@ -101,6 +161,18 @@ export const INITIAL_SKILLS: Skill[] = [
     category: 'animation',
     tags: ['choreography', 'stagger', 'orchestration', 'framer-motion'],
     author: 'emilkowalski',
+    triggers: [
+      'entradas escalonadas en listas o tarjetas',
+      'transición coordinada entre pantallas o pasos',
+      'animación de encabezados donde varios elementos coinciden',
+      'sensación de que demasiadas cosas se mueven al mismo tiempo'
+    ],
+    key_rules: [
+      'REQUIRED: Escalonamiento (stagger) sutil entre 20ms y 50ms',
+      'ALWAYS: Un elemento ancla debe permanecer estable como punto de referencia',
+      'FORBIDDEN: Animar más de 5 elementos en cascada no coordinada',
+      'REQUIRED: La animación completa de entrada no debe exceder 400ms'
+    ],
     install_command: 'npx skills add emilkowalski/skills --skill choreograph',
     created_at: '2026-11-11T10:00:00Z',
   },
@@ -115,6 +187,18 @@ export const INITIAL_SKILLS: Skill[] = [
     category: 'animation',
     tags: ['performance', '60fps', 'compositor', 'gpu'],
     author: 'emilkowalski',
+    triggers: [
+      'animaciones que dan tirones o pierden fotogramas',
+      'decidir si usar CSS, WAAPI o JavaScript para movimiento',
+      'optimizar uso de GPU y capas compuestas',
+      'reducir recálculos de layout en el navegador'
+    ],
+    key_rules: [
+      'REQUIRED: Mantenerse dentro del presupuesto de 16.6ms por fotograma',
+      'FORBIDDEN: Animar propiedades que causen reflow (width, height, top, left)',
+      'ALWAYS: Usar will-change únicamente cuando sea necesario y limpiarlo',
+      'REQUIRED: Preferir el hilo del compositor frente al hilo principal'
+    ],
     install_command: 'npx skills add emilkowalski/skills --skill animation-performance',
     created_at: '2026-11-11T10:00:00Z',
   },
@@ -129,6 +213,18 @@ export const INITIAL_SKILLS: Skill[] = [
     category: 'frontend',
     tags: ['sonner', 'toasts', 'react', 'feedback'],
     author: 'emilkowalski',
+    triggers: [
+      'notificaciones toast en aplicaciones React / Next.js',
+      'retroalimentación de promesas y operaciones asíncronas',
+      'personalizar posición, temas y estilos de toasts',
+      'evitar que los toasts tapen modales o menús'
+    ],
+    key_rules: [
+      'REQUIRED: Incluir un único componente Toaster en el layout raíz',
+      'ALWAYS: Utilizar toast.promise para feedback asíncrono de carga',
+      'REQUIRED: Respetar el contraste y modo oscuro del sistema',
+      'FORBIDDEN: Acumular más de 3 toasts simultáneos sin límite visual'
+    ],
     install_command: 'npx skills add emilkowalski/skills --skill ask-sonner',
     created_at: '2026-11-11T10:00:00Z',
   },
@@ -143,6 +239,18 @@ export const INITIAL_SKILLS: Skill[] = [
     category: 'mobile',
     tags: ['mobile', 'pwa', 'responsive', 'touch-action'],
     author: 'emilkowalski',
+    triggers: [
+      'web app que se siente rígida o extraña en smartphones',
+      'pantalla que hace zoom inesperado al tocar un campo de texto',
+      'destellos grises o hover persistente tras tocar la pantalla',
+      'problemas con la barra de navegación del navegador (100dvh)'
+    ],
+    key_rules: [
+      'REQUIRED: Establecer touch-action: manipulation en elementos interactivos',
+      'REQUIRED: Tamaño de fuente mínimo de 16px en campos input para evitar autozoom en iOS',
+      'REQUIRED: Utilizar 100dvh en lugar de 100vh para contenedores a pantalla completa',
+      'REQUIRED: Área táctil mínima de 44x44px en botones y controles'
+    ],
     install_command: 'npx skills add emilkowalski/skills --skill mobile-native',
     is_favorite: true,
     created_at: '2026-11-11T10:00:00Z',
@@ -158,6 +266,18 @@ export const INITIAL_SKILLS: Skill[] = [
     category: 'testing',
     tags: ['stress-test', 'edge-cases', 'qa', 'layout'],
     author: 'emilkowalski',
+    triggers: [
+      'probar casos límite y estrés en un componente',
+      'verificar resistencia ante nombres largos o sin espacios',
+      'comprobar vistas cuando la lista está vacía o tiene miles de items',
+      'validar soporte para caracteres unicode y emojis'
+    ],
+    key_rules: [
+      'REQUIRED: Implementar desbordamiento con puntos suspensivos o wrapping seguro',
+      'ALWAYS: Probar estados con cero elementos, un elemento y miles de elementos',
+      'FORBIDDEN: Asumir que los textos siempre tendrán longitud moderada',
+      'REQUIRED: Asegurar que los contenedores no se rompan ante cadenas sin espacios'
+    ],
     install_command: 'npx skills add emilkowalski/skills --skill break-ui',
     created_at: '2026-11-11T10:00:00Z',
   },
@@ -172,6 +292,18 @@ export const INITIAL_SKILLS: Skill[] = [
     category: 'mobile',
     tags: ['react-native', 'expo', 'reanimated', 'haptics'],
     author: 'emilkowalski',
+    triggers: [
+      'animaciones en React Native o Expo',
+      'gestos con Gesture Handler y Reanimated',
+      'retroalimentación táctil con expo-haptics',
+      'transiciones fluidas de pantalla con Expo Router'
+    ],
+    key_rules: [
+      'REQUIRED: Ejecutar cálculos de animación directamente en el hilo de UI (worklets)',
+      'FORBIDDEN: Pasar valores animados por el puente asíncrono de React Native',
+      'ALWAYS: Combinar gestos con resortes físicos de Reanimated',
+      'REQUIRED: Degradación elegante en dispositivos de menor potencia'
+    ],
     install_command: 'npx skills add emilkowalski/skills --skill animate-expo',
     created_at: '2026-11-11T10:00:00Z',
   },
@@ -188,6 +320,18 @@ export const INITIAL_SKILLS: Skill[] = [
     category: 'clean-code',
     tags: ['anti-slop', 'design-quality', 'filter', 'craft'],
     author: 'miqdadbadjuber',
+    triggers: [
+      'evitar interfaces con aspecto genérico de IA',
+      'evaluar el propósito funcional de cada decisión visual',
+      'eliminar combinaciones excesivas de tendencias (glassmorphism + glow + grids)',
+      'verificar que el producto mantenga identidad propia'
+    ],
+    key_rules: [
+      'REQUIRED: Regla del propósito (R-31): cada técnica debe tener una justificación escrita',
+      'FORBIDDEN: Carácter em dash (—) en cualquier texto generado (R-02)',
+      'FORBIDDEN: Números, estadísticas o testimonios inventados sin fuente real (R-17, R-18, R-36)',
+      'REQUIRED: Todo control interactivo debe tener una acción real o no existir (R-26)'
+    ],
     install_command: 'npx skills add miqdadbadjuber/anti-slop --skill antislop',
     is_favorite: true,
     created_at: '2026-11-11T10:00:00Z',
@@ -203,6 +347,18 @@ export const INITIAL_SKILLS: Skill[] = [
     category: 'design',
     tags: ['ui', 'color', 'elevation', 'typography', 'clean'],
     author: 'miqdadbadjuber',
+    triggers: [
+      'construir o editar cualquier interfaz web',
+      'revisión de paleta de colores y consistencia de sombras',
+      'evitar patrones de plantilla bento-grid sin contenido que lo justifique',
+      'jerarquía visual con propósito'
+    ],
+    key_rules: [
+      'REQUIRED: Máximo 2 a 3 colores base y 1 de acento (R-29)',
+      'FORBIDDEN: Degradados azul a morado genéricos como color principal (R-01)',
+      'FORBIDDEN: Convertir todos los elementos en pastillas redondeadas (R-11)',
+      'REQUIRED: Dosis controlada de efectos (máximo 1 o 2 elementos con desenfoque o brillo) (R-10, R-13)'
+    ],
     install_command: 'npx skills add miqdadbadjuber/anti-slop --skill antislop-ui',
     is_favorite: true,
     created_at: '2026-11-11T10:00:00Z',
@@ -218,6 +374,18 @@ export const INITIAL_SKILLS: Skill[] = [
     category: 'clean-code',
     tags: ['copywriting', 'human-voice', 'content', 'anti-buzzwords'],
     author: 'miqdadbadjuber',
+    triggers: [
+      'redactar titulares, subtítulos y llamados a la acción (CTAs)',
+      'revisar tono y eliminar palabras vacías de marketing de IA',
+      'comunicar beneficios reales sin exageraciones infundadas',
+      'sustituir afirmaciones abstractas por hechos específicos'
+    ],
+    key_rules: [
+      'FORBIDDEN: Palabras cliché como unlock, elevate, seamless, cutting-edge (R-16)',
+      'FORBIDDEN: Carácter em dash (—) en prosa (R-02)',
+      'REQUIRED: CTAs específicos orientados a la acción real del producto (R-15)',
+      'ALWAYS: Mostrar evidencia concreta antes que promesas vacías'
+    ],
     install_command: 'npx skills add miqdadbadjuber/anti-slop --skill antislop-copywriting',
     created_at: '2026-11-11T10:00:00Z',
   },
@@ -232,6 +400,18 @@ export const INITIAL_SKILLS: Skill[] = [
     category: 'clean-code',
     tags: ['accessibility', 'wcag', 'contrast', 'keyboard'],
     author: 'miqdadbadjuber',
+    triggers: [
+      'auditoría de accesibilidad WCAG AA',
+      'verificación de ratio de contraste en textos',
+      'navegación por teclado completa (Tab, Enter, Escape)',
+      'indicadores visuales de foco claros'
+    ],
+    key_rules: [
+      'REQUIRED: Ratio de contraste mínimo de 4.5:1 en texto normal (R-25)',
+      'FORBIDDEN: Eliminar contorno de foco con outline: none sin reemplazo (R-32)',
+      'REQUIRED: Navegación completa con teclado y cierre con Escape en modales (R-32)',
+      'REQUIRED: Nombre accesible y etiquetas visibles en todos los campos (R-39)'
+    ],
     install_command: 'npx skills add miqdadbadjuber/anti-slop --skill antislop-human',
     created_at: '2026-11-11T10:00:00Z',
   },
@@ -242,10 +422,22 @@ export const INITIAL_SKILLS: Skill[] = [
     repo: 'miqdadbadjuber/anti-slop',
     repo_url: 'https://github.com/miqdadbadjuber/anti-slop',
     skill_path: 'skills/antislop-layoutmobile/SKILL.md',
-    description: 'Diseño móvil que refuye con propósito y no es simplemente la versión de escritorio apretada en 375px. Tipografía fluida y ritmo proporcional.',
+    description: 'Diseño móvil que refluye con propósito y no es simplemente la versión de escritorio apretada en 375px. Tipografía fluida y ritmo proporcional.',
     category: 'mobile',
     tags: ['responsive', 'mobile-layout', 'fluid-type', 'breakpoints'],
     author: 'miqdadbadjuber',
+    triggers: [
+      'diseño responsivo que refluye en pantallas pequeñas',
+      'evitar desbordamiento horizontal y tarjetas que se cortan',
+      'ritmo vertical equilibrado entre secciones en móvil',
+      'ajustar tipografía fluida según el ancho de pantalla'
+    ],
+    key_rules: [
+      'FORBIDDEN: Desbordamiento horizontal en cualquier resolución (R-03)',
+      'REQUIRED: Área de toque cómoda en todos los controles móviles (44px+)',
+      'ALWAYS: Probar diseño en puntos de ruptura reales de 375px y 414px',
+      'REQUIRED: La versión móvil debe diseñarse como experiencia de primera clase'
+    ],
     install_command: 'npx skills add miqdadbadjuber/anti-slop --skill antislop-layoutmobile',
     created_at: '2026-11-11T10:00:00Z',
   },
@@ -260,6 +452,18 @@ export const INITIAL_SKILLS: Skill[] = [
     category: 'clean-code',
     tags: ['code-hygiene', 'clean-comments', 'refactoring'],
     author: 'miqdadbadjuber',
+    triggers: [
+      'limpieza y refactorización de comentarios de código',
+      'eliminar comentarios que repiten lo evidente (// inicializar variable)',
+      'remover separadores ASCII decorativos',
+      'mantener explicaciones de lógica de negocio esencial'
+    ],
+    key_rules: [
+      'FORBIDDEN: Separadores decorativos con caracteres repetidos (==== o ----)',
+      'FORBIDDEN: Comentarios que repiten lo que la siguiente línea ya expresa con claridad',
+      'FORBIDDEN: TODOs vagos sin tarea concreta asignable',
+      'NEVER: Modificar código ejecutable al limpiar comentarios'
+    ],
     install_command: 'npx skills add miqdadbadjuber/anti-slop --skill antislop-code',
     created_at: '2026-11-11T10:00:00Z',
   },
@@ -267,30 +471,39 @@ export const INITIAL_SKILLS: Skill[] = [
 
 export const INITIAL_PACKS: SkillPack[] = [
   {
-    id: 'pack-design-polish',
-    title: '✨ Emil Kowalski Design & Motion Pack',
-    description: 'El kit indispensable para crear interfaces con microinteracciones fluidas, gestos táctiles y animaciones físicas de alta calidad.',
+    id: 'pack-ui-craft',
+    title: '🎨 Frontend UI Craft & Motion',
+    description: 'Stack definitivo de diseño de ingeniería: microinteracciones fluidas, resortes físicos, principios de Apple y filtro visual anti-slop.',
     category: 'design',
-    icon: '✨',
-    skill_ids: ['emil-design-eng', 'emil-animate', 'emil-apple-design', 'emil-gestures', 'emil-ask-sonner'],
+    icon: '🎨',
+    skill_ids: ['emil-design-eng', 'emil-animate', 'emil-apple-design', 'antislop-ui', 'emil-choreograph'],
     created_at: '2026-11-11T10:00:00Z',
   },
   {
-    id: 'pack-anti-slop',
-    title: '🛡️ Anti-Slop Production Clean Pack',
-    description: 'Eleva el estándar de calidad de código y diseño: elimina slop de IA, garantiza contraste WCAG y textos directos y humanos.',
-    category: 'clean-code',
+    id: 'pack-security',
+    title: '🛡️ Security, Hardening & Audit',
+    description: 'Blindaje arquitectónico para producción: revisión de vulnerabilidades en APIs y endpoints con Cloudflare e higiene estricta de código.',
+    category: 'security',
     icon: '🛡️',
-    skill_ids: ['antislop-core', 'antislop-ui', 'antislop-human', 'antislop-copywriting', 'antislop-code'],
+    skill_ids: ['cloudflare-security-audit', 'antislop-code'],
     created_at: '2026-11-11T10:00:00Z',
   },
   {
-    id: 'pack-mobile-first',
-    title: '📱 Mobile-First Native Web Pack',
-    description: 'Ajustes indispensables para que tu web app en smartphones se sienta tan pulida y responsiva como una aplicación nativa de iOS o Android.',
+    id: 'pack-mobile',
+    title: '📱 Mobile-First & Native Polish',
+    description: 'Optimización móvil integral: soluciona el viewport 100dvh, gestos 1:1, soporte para Expo/React Native y reflow responsivo sin desbordamientos.',
     category: 'mobile',
     icon: '📱',
-    skill_ids: ['emil-mobile-native', 'antislop-layoutmobile', 'emil-gestures', 'emil-animate'],
+    skill_ids: ['emil-mobile-native', 'emil-animate-expo', 'antislop-layoutmobile', 'emil-gestures'],
+    created_at: '2026-11-11T10:00:00Z',
+  },
+  {
+    id: 'pack-fullstack',
+    title: '⚡ Fullstack Next.js Production',
+    description: 'El conjunto completo para aplicaciones modernas en producción: auditoría de seguridad, diseño de ingeniería, accesibilidad, toasts con Sonner y copy humano.',
+    category: 'frontend',
+    icon: '⚡',
+    skill_ids: ['cloudflare-security-audit', 'emil-design-eng', 'antislop-ui', 'antislop-copywriting', 'emil-ask-sonner'],
     created_at: '2026-11-11T10:00:00Z',
   },
 ];

@@ -32,19 +32,24 @@ export function SkillCard({
 
   const handleCopyPrompt = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const promptText = `Por favor aplica las siguientes directrices y reglas de la skill en nuestra tarea:
-
-# Skill: ${skill.title} (${skill.name})
-Repositorio: ${skill.repo}
-Categoría: ${skill.category}
-
-## Propósito:
-${skill.description}
-${skill.raw_content ? `\n## Reglas e instrucciones detalladas:\n${skill.raw_content.slice(0, 1500)}` : ''}`;
+    let promptText = `Por favor aplica las siguientes directrices y reglas de la skill en nuestra tarea:\n\n`;
+    promptText += `# Skill: ${skill.title} (${skill.name})\n`;
+    promptText += `Repositorio: ${skill.repo}\n`;
+    promptText += `Categoría: ${skill.category}\n\n`;
+    promptText += `## Propósito:\n${skill.description}\n\n`;
+    if (skill.triggers && skill.triggers.length > 0) {
+      promptText += `## Cuándo se activa:\n${skill.triggers.map(t => `- ${t}`).join('\n')}\n\n`;
+    }
+    if (skill.key_rules && skill.key_rules.length > 0) {
+      promptText += `## Reglas clave:\n${skill.key_rules.map(r => `- ${r}`).join('\n')}\n\n`;
+    }
+    if (skill.raw_content) {
+      promptText += `## Instrucciones:\n${skill.raw_content.slice(0, 1500)}`;
+    }
 
     navigator.clipboard.writeText(promptText);
     setCopiedPrompt(true);
-    toast.success(`Prompt de "${skill.name}" copiado para pegar en chats`);
+    toast.success(`Prompt enriquecido de "${skill.name}" copiado`);
     setTimeout(() => setCopiedPrompt(false), 2000);
   };
 
@@ -122,6 +127,11 @@ ${skill.raw_content ? `\n## Reglas e instrucciones detalladas:\n${skill.raw_cont
 
         {/* Badges: Allowed tools, Tech, Tags */}
         <div className="flex flex-wrap items-center gap-1.5 mb-3">
+          {skill.triggers && skill.triggers.length > 0 && (
+            <span className="inline-flex items-center text-[10px] text-amber-300 bg-amber-950/30 px-1.5 py-0.5 rounded border border-amber-800/40">
+              🎯 {skill.triggers[0]}
+            </span>
+          )}
           {skill.allowed_tools && skill.allowed_tools.length > 0 && (
             <span className="inline-flex items-center text-[10px] text-emerald-400 bg-emerald-950/30 px-1.5 py-0.5 rounded border border-emerald-800/40 font-mono">
               ⚡ {skill.allowed_tools.slice(0, 3).join(', ')}{skill.allowed_tools.length > 3 ? '...' : ''}
