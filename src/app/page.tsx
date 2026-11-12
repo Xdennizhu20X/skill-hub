@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { CategoryType, TechnologyType, Skill, SkillPack } from '@/types/skills';
-import { fetchSkills, fetchPacks, saveSkill, deleteSkill, savePack, updateSkillNotes } from '@/lib/supabase';
+import { fetchSkills, fetchPacks, saveSkill, saveSkills, deleteSkill, savePack, updateSkillNotes } from '@/lib/supabase';
 import { INITIAL_SKILLS, INITIAL_PACKS } from '@/lib/seed-data';
 import { isSoundEnabled, setSoundEnabled, playClickSound, playPopSound, playSuccessSound } from '@/lib/sound';
 import { Navbar } from '@/components/Navbar';
@@ -59,6 +59,36 @@ export default function HomePage() {
   // Initial load
   useEffect(() => {
     setSoundActive(isSoundEnabled());
+
+    // Instant local cache hydration so imported skills never vanish on refresh
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('skillshub_custom_skills');
+        const deleted = localStorage.getItem('skillshub_deleted_ids');
+        const notes = localStorage.getItem('skillshub_skill_notes');
+        const deletedIds = new Set(deleted ? JSON.parse(deleted) : []);
+        const notesMap: Record<string, string> = notes ? JSON.parse(notes) : {};
+
+        const map = new Map<string, Skill>();
+        INITIAL_SKILLS.forEach((s) => {
+          if (!deletedIds.has(s.id)) {
+            map.set(s.id, { ...s, notes: notesMap[s.id] || s.notes });
+          }
+        });
+        if (saved) {
+          const parsed: Skill[] = JSON.parse(saved);
+          parsed.forEach((s) => {
+            if (!deletedIds.has(s.id)) {
+              map.set(s.id, { ...s, notes: notesMap[s.id] || s.notes });
+            }
+          });
+        }
+        setSkills(Array.from(map.values()));
+      } catch (e) {
+        console.warn('Initial local cache read error:', e);
+      }
+    }
+
     async function loadData() {
       try {
         const { skills: loadedSkills, isCloud: cloudStatus } = await fetchSkills();
@@ -184,14 +214,15 @@ export default function HomePage() {
     }
   };
 
-  // Add new skills from GitHub Scraper or Lockfile
+  // Add new skills from GitHub Scraper or Lockfile in batch
   const handleAddSkills = async (newSkills: Omit<Skill, 'id' | 'created_at'>[]) => {
-    const addedList: Skill[] = [];
-    for (const item of newSkills) {
-      const saved = await saveSkill(item);
-      addedList.push(saved);
-    }
-    setSkills((prev) => [...addedList, ...prev]);
+    const savedList = await saveSkills(newSkills);
+    setSkills((prev) => {
+      const map = new Map<string, Skill>();
+      savedList.forEach((s) => map.set(s.id, s));
+      prev.forEach((s) => !map.has(s.id) && map.set(s.id, s));
+      return Array.from(map.values());
+    });
   };
 
   // Add single skill (from Explore modal)
